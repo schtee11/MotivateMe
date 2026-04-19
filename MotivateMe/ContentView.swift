@@ -2,7 +2,8 @@
 //  ContentView.swift
 //  MotivateMe
 //
-//  Created by William Trout on 4/18/26.
+//  Placeholder root view. Will be replaced by the onboarding-or-today
+//  router once those flows are built.
 //
 
 import SwiftUI
@@ -10,50 +11,27 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @Query private var profiles: [UserProfile]
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        }
-    }
+            VStack(spacing: 16) {
+                Text("MotivateMe")
+                    .font(.largeTitle).bold()
 
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
+                Text(profiles.isEmpty ? "No profile yet" : "Profile loaded")
+                    .foregroundStyle(.secondary)
 
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+                Text("Library: \(LibraryStore.shared.exercises.count) exercises, \(LibraryStore.shared.workoutTemplates.count) templates")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
+            .padding()
         }
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: UserProfile.self, inMemory: true)
 }

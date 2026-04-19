@@ -12,7 +12,11 @@ import SwiftData
 struct MotivateMeApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            UserProfile.self,
+            Session.self,
+            SessionExercise.self,
+            BodyMeasurement.self,
+            DailyCheckin.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -22,6 +26,10 @@ struct MotivateMeApp: App {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
+
+    init() {
+        LibraryStore.shared.load()
+    }
 
     var body: some Scene {
         WindowGroup {
