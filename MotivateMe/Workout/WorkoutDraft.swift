@@ -15,6 +15,7 @@ import Foundation
 import SwiftData
 
 @Observable
+@MainActor
 final class WorkoutDraft {
     let template: WorkoutTemplate
     let startedAt: Date = Date()
