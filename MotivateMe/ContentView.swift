@@ -3,8 +3,8 @@
 //  MotivateMe
 //
 //  Root router. If no UserProfile exists the user sees onboarding; after
-//  onboarding saves, the @Query updates and we route to the Today screen
-//  (a placeholder for now).
+//  onboarding saves, the @Query updates and we route to the main TabView
+//  (Today + History).
 //
 
 import SwiftUI
@@ -19,7 +19,7 @@ struct ContentView: View {
             if profiles.isEmpty {
                 OnboardingView()
             } else {
-                TodayView(profile: profiles[0])
+                MainTabView(profile: profiles[0])
             }
         }
         .task { ensureSchedule() }
