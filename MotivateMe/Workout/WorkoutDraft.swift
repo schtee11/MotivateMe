@@ -75,6 +75,15 @@ final class WorkoutDraft {
         session.effortRating = effort?.rating
         session.notes = notes
 
+        // Snapshot today's check-in (if any) onto the session so historical
+        // views can show "you felt a 6 that day" without joining against
+        // DailyCheckin later.
+        if let checkin = try? DailyCheckin.upsert(for: startedAt, in: context),
+           let score = checkin.readinessScore {
+            session.readinessScoreSnapshot = score
+            session.readinessSource = checkin.readinessSource
+        }
+
         session.sessionExercises = exerciseDrafts.enumerated().map { index, draft in
             let sessionExercise = SessionExercise()
             sessionExercise.exerciseId = draft.slot.fallbackExerciseId
@@ -85,6 +94,13 @@ final class WorkoutDraft {
         }
 
         context.insert(session)
+
+        // Link the session into the DailyCheckin for today for fast reverse lookup.
+        if let checkin = try? DailyCheckin.upsert(for: startedAt, in: context) {
+            checkin.sessionId = session.id
+            checkin.status = computedStatus
+        }
+
         do {
             try context.save()
         } catch {

@@ -19,8 +19,10 @@ struct TodayView: View {
     @Bindable var profile: UserProfile
     @State private var activeWorkoutTemplate: WorkoutTemplate?
     @State private var showingPicker: Bool = false
+    @State private var showingCheckin: Bool = false
 
     @Query(sort: \Session.date, order: .reverse) private var allSessions: [Session]
+    @Query(sort: \DailyCheckin.date, order: .reverse) private var allCheckins: [DailyCheckin]
 
     private var todayWeekday: Weekday { Weekday.from(date: Date()) }
 
@@ -52,11 +54,21 @@ struct TodayView: View {
         }
     }
 
+    private var todaysCheckin: DailyCheckin? {
+        let calendar = Calendar.current
+        return allCheckins.first { calendar.isDate($0.date, inSameDayAs: Date()) }
+    }
+
+    private var todaysReadiness: Int? {
+        todaysCheckin?.readinessScore
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     dateHeader
+                    checkinBanner
                     todayCard
                     weekStrip
                 }
@@ -84,6 +96,66 @@ struct TodayView: View {
                     activeWorkoutTemplate = picked
                 }
             }
+            .sheet(isPresented: $showingCheckin) {
+                DailyCheckinSheet()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var checkinBanner: some View {
+        if let score = todaysReadiness {
+            Button { showingCheckin = true } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "sun.max")
+                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Readiness \(score)/10")
+                            .font(.footnote).bold()
+                            .foregroundStyle(.primary)
+                        Text("Tap to update")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.secondary.opacity(0.08))
+                )
+            }
+            .buttonStyle(.plain)
+        } else {
+            Button { showingCheckin = true } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "sun.max.fill")
+                        .foregroundStyle(Color.accentColor)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("How are you feeling today?")
+                            .font(.footnote).bold()
+                            .foregroundStyle(.primary)
+                        Text("Quick morning check-in")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.accentColor.opacity(0.1))
+                )
+            }
+            .buttonStyle(.plain)
         }
     }
 
