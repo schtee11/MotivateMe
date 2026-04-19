@@ -346,5 +346,231 @@
     "instructions": "Stand with the barbell over your mid-foot. Hinge down and grip the bar just outside your knees. Keeping a flat back, drive through your legs and stand up, dragging the bar close to your body.",
     "isSelfLimiting": false,
     "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000013",
+    "name": "Incline Push-up",
+    "movementPattern": "horizontalPush",
+    "primaryMuscles": [
+      { "muscle": "chest", "weight": 0.45 },
+      { "muscle": "triceps", "weight": 0.30 },
+      { "muscle": "shoulders", "weight": 0.25 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.20 }
+    ],
+    "requiredEquipment": [],
+    "difficultyTier": "tier1",
+    "regressionExerciseId": null,
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000014",
+    "contraindications": ["wrists"],
+    "formCues": [
+      "Hands on sturdy elevated surface",
+      "Body in straight line",
+      "Lower chest to edge",
+      "Press away, full lockout"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Place your hands on a sturdy elevated surface such as a countertop or bench, arms straight. Walk your feet back so your body forms a straight line. Lower your chest to the surface, then press back up.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000014",
+    "name": "Push-up",
+    "movementPattern": "horizontalPush",
+    "primaryMuscles": [
+      { "muscle": "chest", "weight": 0.45 },
+      { "muscle": "triceps", "weight": 0.30 },
+      { "muscle": "shoulders", "weight": 0.25 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.30 }
+    ],
+    "requiredEquipment": [],
+    "difficultyTier": "tier1",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000013",
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000015",
+    "contraindications": ["wrists", "shoulders"],
+    "formCues": [
+      "Hands under shoulders",
+      "Body rigid, glutes tight",
+      "Elbows ~45° from torso",
+      "Lower chest to the floor"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Start in a plank with hands under your shoulders. Keeping your body rigid, lower your chest toward the floor by bending your elbows at about a 45-degree angle, then press back up.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000015",
+    "name": "Dumbbell Bench Press",
+    "movementPattern": "horizontalPush",
+    "primaryMuscles": [
+      { "muscle": "chest", "weight": 0.50 },
+      { "muscle": "triceps", "weight": 0.30 },
+      { "muscle": "shoulders", "weight": 0.20 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.15 }
+    ],
+    "requiredEquipment": ["dumbbells", "bench"],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000014",
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000017",
+    "contraindications": ["shoulders"],
+    "formCues": [
+      "Shoulder blades packed on bench",
+      "Feet flat, slight arch",
+      "Dumbbells above lower chest",
+      "Control the descent"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Lie on a bench holding a dumbbell in each hand at chest level. Press the weights up until your arms are nearly straight, then lower with control until your upper arms are parallel to the floor.",
+    "isSelfLimiting": false,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000016",
+    "name": "Dumbbell Floor Press",
+    "movementPattern": "horizontalPush",
+    "primaryMuscles": [
+      { "muscle": "chest", "weight": 0.45 },
+      { "muscle": "triceps", "weight": 0.35 },
+      { "muscle": "shoulders", "weight": 0.20 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.15 }
+    ],
+    "requiredEquipment": ["dumbbells"],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000014",
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000015",
+    "contraindications": [],
+    "formCues": [
+      "Lie flat on floor, knees bent",
+      "Upper arms touch floor at bottom",
+      "Press straight up",
+      "Triceps-friendly range"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Lie flat on the floor with knees bent, holding a dumbbell in each hand. Press the weights up until arms are straight, then lower until your upper arms touch the floor. Press back up.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000017",
+    "name": "Barbell Bench Press",
+    "movementPattern": "horizontalPush",
+    "primaryMuscles": [
+      { "muscle": "chest", "weight": 0.50 },
+      { "muscle": "triceps", "weight": 0.30 },
+      { "muscle": "shoulders", "weight": 0.20 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.15 },
+      { "muscle": "forearms", "weight": 0.10 }
+    ],
+    "requiredEquipment": ["barbell", "bench"],
+    "difficultyTier": "tier3",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000015",
+    "progressionExerciseId": null,
+    "contraindications": ["shoulders"],
+    "formCues": [
+      "Eyes under the bar",
+      "Retract shoulder blades",
+      "Bar to lower chest",
+      "Drive feet into floor"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Lie on a bench with eyes under the bar. Grip slightly wider than shoulder width. Unrack and lower the bar to your lower chest under control, then press it back up. Use a spotter for heavy sets.",
+    "isSelfLimiting": false,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000018",
+    "name": "Pike Push-up",
+    "movementPattern": "verticalPush",
+    "primaryMuscles": [
+      { "muscle": "shoulders", "weight": 0.50 },
+      { "muscle": "triceps", "weight": 0.30 },
+      { "muscle": "chest", "weight": 0.20 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.20 }
+    ],
+    "requiredEquipment": [],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": null,
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000019",
+    "contraindications": ["wrists", "shoulders"],
+    "formCues": [
+      "Hips high, downward dog shape",
+      "Lower crown of head to floor",
+      "Elbows track back and out",
+      "Push hard to start position"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Start in a downward-dog position with hips high and hands planted. Bend your elbows to lower the crown of your head toward the floor between your hands, then press back up.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000019",
+    "name": "Dumbbell Shoulder Press",
+    "movementPattern": "verticalPush",
+    "primaryMuscles": [
+      { "muscle": "shoulders", "weight": 0.55 },
+      { "muscle": "triceps", "weight": 0.30 },
+      { "muscle": "chest", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.20 }
+    ],
+    "requiredEquipment": ["dumbbells"],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000018",
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000020",
+    "contraindications": ["shoulders"],
+    "formCues": [
+      "Start at shoulder height",
+      "Ribs down, core braced",
+      "Press straight overhead",
+      "Avoid lower-back arch"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Sit or stand holding dumbbells at shoulder height, palms facing forward. Press the weights overhead until arms are straight, then lower under control back to shoulder height.",
+    "isSelfLimiting": false,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000020",
+    "name": "Barbell Overhead Press",
+    "movementPattern": "verticalPush",
+    "primaryMuscles": [
+      { "muscle": "shoulders", "weight": 0.55 },
+      { "muscle": "triceps", "weight": 0.30 },
+      { "muscle": "chest", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.30 },
+      { "muscle": "back", "weight": 0.20 }
+    ],
+    "requiredEquipment": ["barbell"],
+    "difficultyTier": "tier3",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000019",
+    "progressionExerciseId": null,
+    "contraindications": ["shoulders", "lowerBack"],
+    "formCues": [
+      "Bar on front delts",
+      "Glutes and core tight",
+      "Press, then pull head through",
+      "Lock out overhead"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Stand with a barbell resting on your front delts, hands just outside shoulders. Brace your core and glutes, press the bar overhead, and pull your head through at the top so the bar is directly over your mid-foot.",
+    "isSelfLimiting": false,
+    "isTimed": false
   }
 ]
