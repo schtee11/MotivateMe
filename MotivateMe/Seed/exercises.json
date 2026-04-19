@@ -572,5 +572,238 @@
     "instructions": "Stand with a barbell resting on your front delts, hands just outside shoulders. Brace your core and glutes, press the bar overhead, and pull your head through at the top so the bar is directly over your mid-foot.",
     "isSelfLimiting": false,
     "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000021",
+    "name": "Band Row",
+    "movementPattern": "horizontalPull",
+    "primaryMuscles": [
+      { "muscle": "back", "weight": 0.50 },
+      { "muscle": "biceps", "weight": 0.25 },
+      { "muscle": "shoulders", "weight": 0.25 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "forearms", "weight": 0.20 },
+      { "muscle": "core", "weight": 0.15 }
+    ],
+    "requiredEquipment": ["resistanceBands"],
+    "difficultyTier": "tier1",
+    "regressionExerciseId": null,
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000022",
+    "contraindications": [],
+    "formCues": [
+      "Anchor band at chest height",
+      "Tall posture, shoulders down",
+      "Pull handles to ribs",
+      "Squeeze shoulder blades"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Anchor a resistance band at chest height. Hold a handle in each hand and step back until there is tension. Pull the handles toward your ribs, squeezing your shoulder blades together, then return with control.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000022",
+    "name": "Dumbbell Bent-Over Row",
+    "movementPattern": "horizontalPull",
+    "primaryMuscles": [
+      { "muscle": "back", "weight": 0.55 },
+      { "muscle": "biceps", "weight": 0.25 },
+      { "muscle": "shoulders", "weight": 0.20 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.25 },
+      { "muscle": "forearms", "weight": 0.20 },
+      { "muscle": "hamstrings", "weight": 0.15 }
+    ],
+    "requiredEquipment": ["dumbbells"],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000021",
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000023",
+    "contraindications": ["lowerBack"],
+    "formCues": [
+      "Hinge to ~45° torso angle",
+      "Flat back, braced core",
+      "Row dumbbells to hips",
+      "Control on the way down"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Stand with a dumbbell in each hand. Hinge at your hips until your torso is about 45 degrees to the floor, keeping a flat back. Row the dumbbells to your hips, then lower with control.",
+    "isSelfLimiting": false,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000023",
+    "name": "Chest-Supported Dumbbell Row",
+    "movementPattern": "horizontalPull",
+    "primaryMuscles": [
+      { "muscle": "back", "weight": 0.55 },
+      { "muscle": "biceps", "weight": 0.30 },
+      { "muscle": "shoulders", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "forearms", "weight": 0.20 }
+    ],
+    "requiredEquipment": ["dumbbells", "bench"],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000022",
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000024",
+    "contraindications": [],
+    "formCues": [
+      "Chest on an incline bench",
+      "Let arms hang fully",
+      "Row elbows back and up",
+      "Pause, squeeze back"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Lie face-down on an incline bench with a dumbbell in each hand hanging straight down. Row the dumbbells up by driving your elbows back, squeeze your shoulder blades, then lower with control.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000024",
+    "name": "Barbell Bent-Over Row",
+    "movementPattern": "horizontalPull",
+    "primaryMuscles": [
+      { "muscle": "back", "weight": 0.55 },
+      { "muscle": "biceps", "weight": 0.25 },
+      { "muscle": "shoulders", "weight": 0.20 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.30 },
+      { "muscle": "hamstrings", "weight": 0.20 },
+      { "muscle": "forearms", "weight": 0.20 }
+    ],
+    "requiredEquipment": ["barbell"],
+    "difficultyTier": "tier3",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000023",
+    "progressionExerciseId": null,
+    "contraindications": ["lowerBack"],
+    "formCues": [
+      "Hinge with flat back",
+      "Bar under shoulders at hang",
+      "Row to upper abdomen",
+      "No jerking with lower back"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Hinge at your hips with a barbell in front of you, maintaining a flat back. Row the bar to your upper abdomen, keeping your elbows tucked in, then lower with control.",
+    "isSelfLimiting": false,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000025",
+    "name": "Band-Assisted Pull-up",
+    "movementPattern": "verticalPull",
+    "primaryMuscles": [
+      { "muscle": "back", "weight": 0.55 },
+      { "muscle": "biceps", "weight": 0.30 },
+      { "muscle": "shoulders", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.20 },
+      { "muscle": "forearms", "weight": 0.20 }
+    ],
+    "requiredEquipment": ["pullUpBar", "resistanceBands"],
+    "difficultyTier": "tier1",
+    "regressionExerciseId": null,
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000028",
+    "contraindications": ["shoulders"],
+    "formCues": [
+      "Loop band around bar, foot in",
+      "Full hang to start",
+      "Pull chest to bar",
+      "Lower under control"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Loop a resistance band over a pull-up bar and place one foot or knee in the loop for assistance. Hang from the bar, then pull yourself up until your chin clears the bar. Lower with control.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000026",
+    "name": "Lat Pulldown",
+    "movementPattern": "verticalPull",
+    "primaryMuscles": [
+      { "muscle": "back", "weight": 0.55 },
+      { "muscle": "biceps", "weight": 0.30 },
+      { "muscle": "shoulders", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.15 },
+      { "muscle": "forearms", "weight": 0.15 }
+    ],
+    "requiredEquipment": ["cableMachine"],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": null,
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000027",
+    "contraindications": ["shoulders"],
+    "formCues": [
+      "Grip slightly wider than shoulders",
+      "Chest up, slight backward lean",
+      "Pull bar to upper chest",
+      "Control the return"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Sit at a lat pulldown machine with thighs secured. Grip the bar slightly wider than shoulder width. Pull the bar down to your upper chest by driving your elbows down and back, then return under control.",
+    "isSelfLimiting": false,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000027",
+    "name": "Pull-up",
+    "movementPattern": "verticalPull",
+    "primaryMuscles": [
+      { "muscle": "back", "weight": 0.55 },
+      { "muscle": "biceps", "weight": 0.30 },
+      { "muscle": "shoulders", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.25 },
+      { "muscle": "forearms", "weight": 0.25 }
+    ],
+    "requiredEquipment": ["pullUpBar"],
+    "difficultyTier": "tier3",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000028",
+    "progressionExerciseId": null,
+    "contraindications": ["shoulders"],
+    "formCues": [
+      "Overhand grip, shoulder-width",
+      "Start from a full dead hang",
+      "Drive elbows down",
+      "Chin over the bar"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Grip a pull-up bar with an overhand grip at about shoulder width. From a full dead hang, pull yourself up until your chin clears the bar, then lower with control.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000028",
+    "name": "Chin-up",
+    "movementPattern": "verticalPull",
+    "primaryMuscles": [
+      { "muscle": "back", "weight": 0.45 },
+      { "muscle": "biceps", "weight": 0.40 },
+      { "muscle": "shoulders", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.25 },
+      { "muscle": "forearms", "weight": 0.25 }
+    ],
+    "requiredEquipment": ["pullUpBar"],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000025",
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000027",
+    "contraindications": ["shoulders"],
+    "formCues": [
+      "Underhand grip, shoulder-width",
+      "Engage lats before pulling",
+      "Chin over the bar",
+      "Lower slowly"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Grip a pull-up bar with an underhand grip at about shoulder width. From a full hang, pull yourself up until your chin clears the bar, then lower with control.",
+    "isSelfLimiting": true,
+    "isTimed": false
   }
 ]
