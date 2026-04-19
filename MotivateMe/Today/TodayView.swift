@@ -14,7 +14,7 @@
 import SwiftUI
 
 struct TodayView: View {
-    let profile: UserProfile
+    @Bindable var profile: UserProfile
 
     private var todayWeekday: Weekday { Weekday.from(date: Date()) }
 
@@ -33,11 +33,72 @@ struct TodayView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     dateHeader
                     todayCard
+                    weekStrip
                 }
                 .padding()
             }
             .navigationTitle("Today")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        EditScheduleView(profile: profile)
+                    } label: {
+                        Image(systemName: "calendar")
+                    }
+                }
+            }
         }
+    }
+
+    private var weekStrip: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("This week")
+                    .font(.headline)
+                Spacer()
+                NavigationLink("Edit") {
+                    EditScheduleView(profile: profile)
+                }
+                .font(.footnote)
+            }
+
+            HStack(spacing: 6) {
+                ForEach(Weekday.allCases, id: \.self) { weekday in
+                    weekdayPill(weekday)
+                }
+            }
+        }
+    }
+
+    private func weekdayPill(_ weekday: Weekday) -> some View {
+        let entry = profile.weeklySchedule.first { $0.weekday == weekday }
+        let isToday = weekday == todayWeekday
+        let category = entry?.templateCategory
+        let letter = category?.displayName.prefix(1).uppercased() ?? "·"
+
+        return VStack(spacing: 4) {
+            Text(weekday.shortName.prefix(1))
+                .font(.caption2).bold()
+                .foregroundStyle(.secondary)
+            Text(letter)
+                .font(.caption).bold()
+                .frame(width: 28, height: 28)
+                .background(
+                    Circle().fill(
+                        category == nil
+                            ? Color.secondary.opacity(0.15)
+                            : Color.accentColor.opacity(0.2)
+                    )
+                )
+                .foregroundStyle(category == nil ? .secondary : .primary)
+                .overlay(
+                    Circle().stroke(
+                        isToday ? Color.accentColor : .clear,
+                        lineWidth: 2
+                    )
+                )
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private var dateHeader: some View {
