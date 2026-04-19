@@ -104,6 +104,12 @@ struct EquipmentStep: View {
 
             ScrollView {
                 VStack(spacing: 8) {
+                    SelectableRow(
+                        label: "All equipment",
+                        isSelected: allSelected,
+                        action: toggleAll
+                    )
+
                     ForEach(selectableEquipment, id: \.self) { equipment in
                         SelectableRow(
                             label: equipment.displayName,
@@ -116,11 +122,23 @@ struct EquipmentStep: View {
         }
     }
 
+    private var allSelected: Bool {
+        draft.availableEquipment.count == selectableEquipment.count
+    }
+
     private func toggle(_ equipment: Equipment) {
         if draft.availableEquipment.contains(equipment) {
             draft.availableEquipment.remove(equipment)
         } else {
             draft.availableEquipment.insert(equipment)
+        }
+    }
+
+    private func toggleAll() {
+        if allSelected {
+            draft.availableEquipment.removeAll()
+        } else {
+            draft.availableEquipment = Set(selectableEquipment)
         }
     }
 }
