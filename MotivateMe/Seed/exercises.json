@@ -805,5 +805,312 @@
     "instructions": "Grip a pull-up bar with an underhand grip at about shoulder width. From a full hang, pull yourself up until your chin clears the bar, then lower with control.",
     "isSelfLimiting": true,
     "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000029",
+    "name": "Dead Bug",
+    "movementPattern": "core",
+    "primaryMuscles": [
+      { "muscle": "core", "weight": 0.80 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "quads", "weight": 0.15 },
+      { "muscle": "shoulders", "weight": 0.10 }
+    ],
+    "requiredEquipment": [],
+    "difficultyTier": "tier1",
+    "regressionExerciseId": null,
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000032",
+    "contraindications": [],
+    "formCues": [
+      "Lower back pressed to floor",
+      "Ribs down, long exhale",
+      "Opposite arm and leg extend",
+      "Move slow and controlled"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Lie on your back with arms reaching to the ceiling and knees over your hips. Slowly lower your opposite arm and leg toward the floor while keeping your lower back pressed into the ground. Return and alternate sides.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000030",
+    "name": "Plank",
+    "movementPattern": "core",
+    "primaryMuscles": [
+      { "muscle": "core", "weight": 0.70 },
+      { "muscle": "shoulders", "weight": 0.20 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "glutes", "weight": 0.20 },
+      { "muscle": "back", "weight": 0.15 }
+    ],
+    "requiredEquipment": [],
+    "difficultyTier": "tier1",
+    "regressionExerciseId": null,
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000031",
+    "contraindications": ["wrists"],
+    "formCues": [
+      "Elbows under shoulders",
+      "Body in a straight line",
+      "Glutes squeezed, ribs down",
+      "Breathe steadily"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Set up on your forearms and toes with elbows under your shoulders. Keep your body in a straight line from head to heels, squeezing your glutes and bracing your core. Hold.",
+    "isSelfLimiting": true,
+    "isTimed": true
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000031",
+    "name": "Side Plank",
+    "movementPattern": "core",
+    "primaryMuscles": [
+      { "muscle": "core", "weight": 0.75 },
+      { "muscle": "shoulders", "weight": 0.20 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "glutes", "weight": 0.20 }
+    ],
+    "requiredEquipment": [],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000030",
+    "progressionExerciseId": null,
+    "contraindications": ["shoulders", "wrists"],
+    "formCues": [
+      "Elbow under shoulder",
+      "Stack feet and hips",
+      "Lift hips, straight line",
+      "Switch sides each set"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Lie on your side supported on one forearm, elbow under shoulder. Stack your feet and lift your hips so your body forms a straight line. Hold, then switch sides.",
+    "isSelfLimiting": true,
+    "isTimed": true
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000032",
+    "name": "Hollow Hold",
+    "movementPattern": "core",
+    "primaryMuscles": [
+      { "muscle": "core", "weight": 0.85 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "quads", "weight": 0.15 },
+      { "muscle": "shoulders", "weight": 0.15 }
+    ],
+    "requiredEquipment": [],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000029",
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000033",
+    "contraindications": ["lowerBack"],
+    "formCues": [
+      "Lower back glued to floor",
+      "Arms by ears, legs straight",
+      "Shoulder blades off the ground",
+      "Regress by tucking knees"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Lie on your back and press your lower back into the floor. Extend your arms past your ears and legs out straight, lifting your shoulders and heels a few inches off the ground. Hold.",
+    "isSelfLimiting": true,
+    "isTimed": true
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000033",
+    "name": "Hanging Knee Raise",
+    "movementPattern": "core",
+    "primaryMuscles": [
+      { "muscle": "core", "weight": 0.70 },
+      { "muscle": "forearms", "weight": 0.30 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "back", "weight": 0.20 },
+      { "muscle": "shoulders", "weight": 0.15 }
+    ],
+    "requiredEquipment": ["pullUpBar"],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000032",
+    "progressionExerciseId": null,
+    "contraindications": ["shoulders"],
+    "formCues": [
+      "Dead hang, shoulders engaged",
+      "Tuck knees to chest",
+      "Don't swing",
+      "Lower with control"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Hang from a pull-up bar with arms straight and shoulders engaged. Raise your knees toward your chest by curling your pelvis, then lower with control. Avoid swinging.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000034",
+    "name": "Farmer Carry",
+    "movementPattern": "carry",
+    "primaryMuscles": [
+      { "muscle": "forearms", "weight": 0.40 },
+      { "muscle": "core", "weight": 0.30 },
+      { "muscle": "back", "weight": 0.20 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "shoulders", "weight": 0.20 },
+      { "muscle": "quads", "weight": 0.15 },
+      { "muscle": "glutes", "weight": 0.15 }
+    ],
+    "requiredEquipment": ["dumbbells"],
+    "difficultyTier": "tier1",
+    "regressionExerciseId": null,
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000035",
+    "contraindications": [],
+    "formCues": [
+      "Tall posture, chest up",
+      "Shoulders packed down",
+      "Even, short strides",
+      "Breathe through the carry"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Hold a heavy dumbbell in each hand at your sides. Walk with tall posture and short, even strides for the prescribed time, keeping your shoulders pulled down and core braced.",
+    "isSelfLimiting": true,
+    "isTimed": true
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000035",
+    "name": "Suitcase Carry",
+    "movementPattern": "carry",
+    "primaryMuscles": [
+      { "muscle": "core", "weight": 0.45 },
+      { "muscle": "forearms", "weight": 0.30 },
+      { "muscle": "back", "weight": 0.25 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "shoulders", "weight": 0.20 },
+      { "muscle": "glutes", "weight": 0.20 }
+    ],
+    "requiredEquipment": ["dumbbells"],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000034",
+    "progressionExerciseId": null,
+    "contraindications": [],
+    "formCues": [
+      "One heavy dumbbell, one side",
+      "Resist tipping toward weight",
+      "Ribs stacked over hips",
+      "Switch sides each set"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Hold one heavy dumbbell in one hand. Walk with tall posture, resisting the tendency to lean toward the weight. Keep your ribs stacked over your hips. Switch sides each set.",
+    "isSelfLimiting": true,
+    "isTimed": true
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000036",
+    "name": "Cat-Cow",
+    "movementPattern": "mobility",
+    "primaryMuscles": [
+      { "muscle": "back", "weight": 0.60 },
+      { "muscle": "core", "weight": 0.30 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "shoulders", "weight": 0.15 }
+    ],
+    "requiredEquipment": [],
+    "difficultyTier": "tier1",
+    "regressionExerciseId": null,
+    "progressionExerciseId": null,
+    "contraindications": ["wrists"],
+    "formCues": [
+      "Hands under shoulders, knees under hips",
+      "Inhale: arch, look up (cow)",
+      "Exhale: round, tuck chin (cat)",
+      "Move with breath"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Start on hands and knees. Inhale as you drop your belly and lift your chest and tailbone (cow). Exhale as you round your back and tuck your chin (cat). Flow between the two.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000037",
+    "name": "World's Greatest Stretch",
+    "movementPattern": "mobility",
+    "primaryMuscles": [
+      { "muscle": "hamstrings", "weight": 0.30 },
+      { "muscle": "glutes", "weight": 0.30 },
+      { "muscle": "back", "weight": 0.25 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "quads", "weight": 0.20 },
+      { "muscle": "shoulders", "weight": 0.20 },
+      { "muscle": "core", "weight": 0.15 }
+    ],
+    "requiredEquipment": [],
+    "difficultyTier": "tier1",
+    "regressionExerciseId": null,
+    "progressionExerciseId": null,
+    "contraindications": [],
+    "formCues": [
+      "Step into deep lunge",
+      "Opposite hand to floor",
+      "Rotate front-side arm to ceiling",
+      "Alternate legs"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Step forward into a deep lunge. Place the opposite hand on the floor and rotate your front-side arm up toward the ceiling, opening your chest. Return and repeat on the other side.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000038",
+    "name": "Kneeling Hip Flexor Stretch",
+    "movementPattern": "mobility",
+    "primaryMuscles": [
+      { "muscle": "quads", "weight": 0.40 },
+      { "muscle": "glutes", "weight": 0.30 },
+      { "muscle": "core", "weight": 0.20 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "hamstrings", "weight": 0.15 }
+    ],
+    "requiredEquipment": [],
+    "difficultyTier": "tier1",
+    "regressionExerciseId": null,
+    "progressionExerciseId": null,
+    "contraindications": ["knees"],
+    "formCues": [
+      "Half-kneel on soft surface",
+      "Tuck pelvis under",
+      "Squeeze glute of kneeling leg",
+      "Gentle forward press"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Kneel on one knee with the other foot flat in front, both knees at 90 degrees. Tuck your pelvis under and squeeze the glute of the kneeling leg. Shift forward gently until you feel a stretch in the front of the hip. Hold, then switch sides.",
+    "isSelfLimiting": true,
+    "isTimed": true
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000039",
+    "name": "Thoracic Spine Rotation",
+    "movementPattern": "mobility",
+    "primaryMuscles": [
+      { "muscle": "back", "weight": 0.55 },
+      { "muscle": "shoulders", "weight": 0.30 },
+      { "muscle": "core", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [],
+    "requiredEquipment": [],
+    "difficultyTier": "tier1",
+    "regressionExerciseId": null,
+    "progressionExerciseId": null,
+    "contraindications": [],
+    "formCues": [
+      "Start quadruped, sit hips toward heels",
+      "Hand behind head",
+      "Rotate elbow up toward ceiling",
+      "Exhale through the rotation"
+    ],
+    "demoVideoURL": null,
+    "instructions": "From hands and knees, sit your hips back toward your heels. Place one hand behind your head and rotate that elbow up toward the ceiling, following it with your eyes. Return and repeat, then switch sides.",
+    "isSelfLimiting": true,
+    "isTimed": false
   }
 ]
