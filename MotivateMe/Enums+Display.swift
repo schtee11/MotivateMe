@@ -182,7 +182,7 @@ extension EffortLevel {
         }
     }
 
-    init?(rating: Int) {
+    nonisolated init?(rating: Int) {
         switch rating {
         case 1: self = .easy
         case 2: self = .moderate
