@@ -157,7 +157,10 @@ struct SessionDetailView: View {
         } else {
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(exercises) { sessionExercise in
-                    ExerciseDetailCard(sessionExercise: sessionExercise)
+                    ExerciseDetailCard(
+                        sessionExercise: sessionExercise,
+                        isPR: session.prExerciseIds.contains(sessionExercise.exerciseId)
+                    )
                 }
             }
         }
@@ -193,6 +196,9 @@ struct SessionDetailView: View {
 
 private struct ExerciseDetailCard: View {
     let sessionExercise: SessionExercise
+    let isPR: Bool
+
+    @State private var showingHistory: Bool = false
 
     private var exercise: Exercise? {
         LibraryStore.shared.exercise(id: sessionExercise.exerciseId)
@@ -200,21 +206,38 @@ private struct ExerciseDetailCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(exercise?.name ?? "Exercise")
-                    .font(.headline)
-                Spacer()
-                if sessionExercise.skipped {
-                    Text("Skipped")
-                        .font(.caption).bold()
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(
-                            Capsule().fill(Color.secondary.opacity(0.15))
-                        )
+            Button {
+                showingHistory = true
+            } label: {
+                HStack {
+                    Text(exercise?.name ?? "Exercise")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                    if isPR {
+                        Label("PR", systemImage: "trophy.fill")
+                            .font(.caption2).bold()
+                            .foregroundStyle(.orange)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Capsule().fill(Color.orange.opacity(0.15)))
+                    }
+                    if sessionExercise.skipped {
+                        Text("Skipped")
+                            .font(.caption).bold()
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(
+                                Capsule().fill(Color.secondary.opacity(0.15))
+                            )
+                    }
                 }
             }
+            .buttonStyle(.plain)
 
             if !sessionExercise.skipped && !sessionExercise.sets.isEmpty {
                 VStack(spacing: 4) {
@@ -231,6 +254,9 @@ private struct ExerciseDetailCard: View {
                 .fill(Color.secondary.opacity(0.08))
         )
         .opacity(sessionExercise.skipped ? 0.6 : 1)
+        .sheet(isPresented: $showingHistory) {
+            ExerciseHistoryView(exerciseId: sessionExercise.exerciseId)
+        }
     }
 }
 

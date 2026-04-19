@@ -19,6 +19,7 @@ struct TodayView: View {
     @Bindable var profile: UserProfile
     @State private var activeWorkoutTemplate: WorkoutTemplate?
     @State private var showingPicker: Bool = false
+    @State private var showingLighterPicker: Bool = false
     @State private var showingCheckin: Bool = false
 
     @Query(sort: \Session.date, order: .reverse) private var allSessions: [Session]
@@ -93,6 +94,11 @@ struct TodayView: View {
             }
             .sheet(isPresented: $showingPicker) {
                 WorkoutPickerView(profile: profile) { picked in
+                    activeWorkoutTemplate = picked
+                }
+            }
+            .sheet(isPresented: $showingLighterPicker) {
+                WorkoutPickerView(profile: profile, initialEffortFilter: .easy) { picked in
                     activeWorkoutTemplate = picked
                 }
             }
@@ -343,7 +349,9 @@ struct TodayView: View {
     }
 
     private func workoutCard(template: WorkoutTemplate, category: TemplateCategory) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let isLowReadiness = (todaysReadiness ?? 7) <= 4
+
+        return VStack(alignment: .leading, spacing: 12) {
             Text(category.displayName.uppercased())
                 .font(.caption).bold()
                 .foregroundStyle(.secondary)
@@ -351,7 +359,22 @@ struct TodayView: View {
             Text(template.name)
                 .font(.title).bold()
 
-            if let summary = template.summary {
+            if isLowReadiness {
+                HStack(spacing: 8) {
+                    Image(systemName: "leaf")
+                        .foregroundStyle(.orange)
+                    Text("Feeling wiped today? Take it easy.")
+                        .font(.footnote)
+                        .foregroundStyle(.primary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.orange.opacity(0.12))
+                )
+            } else if let summary = template.summary {
                 Text(summary)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -367,12 +390,24 @@ struct TodayView: View {
             Button {
                 activeWorkoutTemplate = template
             } label: {
-                Text("Start workout")
+                Text(isLowReadiness ? "Start anyway" : "Start workout")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .padding(.top, 4)
+
+            if isLowReadiness {
+                Button {
+                    showingLighterPicker = true
+                } label: {
+                    Label("Try a lighter option", systemImage: "leaf")
+                        .font(.footnote)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
 
             Button {
                 showingPicker = true

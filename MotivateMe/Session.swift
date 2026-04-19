@@ -31,5 +31,10 @@ final class Session {
     var readinessScoreSnapshot: Int?
     var readinessSource: ReadinessSource = ReadinessSource.none
 
+    // Exercise IDs (into LibraryStore) for which this session set a new
+    // personal record. Computed at save time by PRDetector and surfaced
+    // as badges in History and on the Progress tab.
+    var prExerciseIds: [UUID] = []
+
     init() {}
 }

@@ -94,6 +94,12 @@ final class WorkoutDraft {
             return sessionExercise
         }
 
+        // PR detection runs before insert so the prior set excludes this
+        // session by construction. Result is stored on the session and
+        // surfaced as badges in History and on the Progress tab.
+        let priorSessions = (try? context.fetch(FetchDescriptor<Session>())) ?? []
+        session.prExerciseIds = Array(PRDetector.newPRs(in: session, against: priorSessions))
+
         context.insert(session)
 
         // Link the session into the DailyCheckin for today for fast reverse lookup.

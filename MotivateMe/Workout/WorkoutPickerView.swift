@@ -12,16 +12,27 @@ import SwiftUI
 
 struct WorkoutPickerView: View {
     let profile: UserProfile
+    // Optional pre-filter applied on top of the user's available
+    // templates. Used when readiness is low to surface only easier
+    // options without yanking the full library.
+    var initialEffortFilter: EffortLevel? = nil
     let onPick: (WorkoutTemplate) -> Void
 
     @Environment(\.dismiss) private var dismiss
 
     private var grouped: [(category: TemplateCategory, templates: [WorkoutTemplate])] {
-        let all = TemplateRecommender.allCandidates(for: profile)
+        var all = TemplateRecommender.allCandidates(for: profile)
+        if let effort = initialEffortFilter {
+            all = all.filter { $0.effortLevel == effort }
+        }
         let byCategory = Dictionary(grouping: all, by: \.templateCategory)
         return byCategory
             .map { (category: $0.key, templates: $0.value) }
             .sorted { $0.category.sortOrder < $1.category.sortOrder }
+    }
+
+    private var navigationTitle: String {
+        initialEffortFilter == .easy ? "Lighter options" : "Pick a workout"
     }
 
     var body: some View {
@@ -33,7 +44,7 @@ struct WorkoutPickerView: View {
                     list
                 }
             }
-            .navigationTitle("Pick a workout")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

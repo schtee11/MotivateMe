@@ -168,17 +168,29 @@ private struct ExerciseCard: View {
     let profile: UserProfile
 
     @State private var showingExercisePicker: Bool = false
+    @State private var showingExerciseHistory: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(draft.exercise?.name ?? "Exercise")
-                        .font(.headline)
-                    Text(draft.targetDescription)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                Button {
+                    showingExerciseHistory = true
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Text(draft.exercise?.name ?? "Exercise")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                            Image(systemName: "chevron.right")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                        Text(draft.targetDescription)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .buttonStyle(.plain)
                 Spacer()
                 Menu {
                     Button {
@@ -254,6 +266,9 @@ private struct ExerciseCard: View {
             ) { picked in
                 draft.currentExerciseId = picked.id
             }
+        }
+        .sheet(isPresented: $showingExerciseHistory) {
+            ExerciseHistoryView(exerciseId: draft.currentExerciseId)
         }
     }
 

@@ -88,9 +88,20 @@ private struct SessionRow: View {
         HStack(spacing: 12) {
             statusIcon
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline).bold()
-                    .foregroundStyle(.primary)
+                HStack(spacing: 6) {
+                    Text(title)
+                        .font(.subheadline).bold()
+                        .foregroundStyle(.primary)
+                    if !session.prExerciseIds.isEmpty {
+                        Label("\(session.prExerciseIds.count) PR", systemImage: "trophy.fill")
+                            .labelStyle(.titleAndIcon)
+                            .font(.caption2).bold()
+                            .foregroundStyle(.orange)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Color.orange.opacity(0.15)))
+                    }
+                }
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
