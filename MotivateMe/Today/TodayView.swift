@@ -15,6 +15,7 @@ import SwiftUI
 import SwiftData
 
 struct TodayView: View {
+    @Environment(\.modelContext) private var modelContext
     @Bindable var profile: UserProfile
     @State private var activeWorkoutTemplate: WorkoutTemplate?
     @State private var showingPicker: Bool = false
@@ -168,7 +169,7 @@ struct TodayView: View {
             Text("DONE FOR TODAY")
                 .font(.caption).bold()
                 .foregroundStyle(.secondary)
-            Text(session.status == .skipped ? "Logged — rest up" : "Nice work")
+            Text(completedTitle(status: session.status))
                 .font(.title2).bold()
             Text(subtitle(status: session.status, completed: completedCount, total: total))
                 .font(.subheadline)
@@ -203,6 +204,15 @@ struct TodayView: View {
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.accentColor.opacity(0.12))
         )
+    }
+
+    private func completedTitle(status: SessionStatus) -> String {
+        switch status {
+        case .completed, .partial: return "Nice work"
+        case .skipped:             return "Logged — rest up"
+        case .restDayLogged:       return "Resting today"
+        case .upcoming:            return ""
+        }
     }
 
     private func subtitle(status: SessionStatus, completed: Int, total: Int) -> String {
@@ -306,6 +316,16 @@ struct TodayView: View {
                 .foregroundStyle(.secondary)
 
             Button {
+                logRestDay()
+            } label: {
+                Label("Log rest day", systemImage: "moon.zzz")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .padding(.top, 4)
+
+            Button {
                 showingPicker = true
             } label: {
                 Label("Pick a workout anyway", systemImage: "list.bullet")
@@ -313,7 +333,6 @@ struct TodayView: View {
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .padding(.top, 4)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -321,5 +340,16 @@ struct TodayView: View {
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.secondary.opacity(0.08))
         )
+    }
+
+    // Create a zero-exercise Session marking that the user consciously took the
+    // day off. Shows up in History and keeps streak logic (future) honest.
+    private func logRestDay() {
+        let session = Session()
+        session.date = Date()
+        session.completedAt = Date()
+        session.status = .restDayLogged
+        modelContext.insert(session)
+        try? modelContext.save()
     }
 }
