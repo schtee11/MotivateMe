@@ -209,11 +209,17 @@ private struct SetRow: View {
     }
 
     private var weightField: some View {
-        HStack(spacing: 2) {
-            TextField("Weight", value: $set.weight, format: .number, prompt: Text("—"))
+        HStack(spacing: 4) {
+            TextField("Weight", value: $set.weight, format: .number, prompt: Text("wt"))
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.trailing)
-                .frame(width: 56)
+                .frame(width: 46)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.secondary.opacity(0.35), lineWidth: 1)
+                )
             Text(weightUnitShort)
                 .font(.caption)
                 .foregroundStyle(.secondary)

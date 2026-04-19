@@ -4,18 +4,21 @@
 //
 //  Post-onboarding landing screen. Reads the user's weekly schedule,
 //  looks up today's category, and recommends a matching template from
-//  the library. Three states: workout day with a match, workout day
-//  without a compatible template (equipment mismatch), and rest day.
-//
-//  Start/Swap/Edit actions are stubbed for this first pass — they'll
-//  wire to real flows in follow-up commits.
+//  the library. Renders one of four states:
+//  - Session already logged today → completed card (no Start button)
+//  - Rest day → rest card
+//  - Workout day with matching template → workout card with Start
+//  - Workout day, no matching template → no-match card
 //
 
 import SwiftUI
+import SwiftData
 
 struct TodayView: View {
     @Bindable var profile: UserProfile
     @State private var activeWorkoutTemplate: WorkoutTemplate?
+
+    @Query(sort: \Session.date, order: .reverse) private var allSessions: [Session]
 
     private var todayWeekday: Weekday { Weekday.from(date: Date()) }
 
@@ -26,6 +29,15 @@ struct TodayView: View {
     private var recommendedTemplate: WorkoutTemplate? {
         guard let category = todayEntry?.templateCategory else { return nil }
         return TemplateRecommender.recommend(category: category, for: profile)
+    }
+
+    // Treat any saved session whose date falls on today as "done for today".
+    // Checking the first (most recent) is enough because the query is sorted.
+    private var todaysSession: Session? {
+        let calendar = Calendar.current
+        return allSessions.first { session in
+            calendar.isDate(session.date, inSameDayAs: Date())
+        }
     }
 
     var body: some View {
@@ -114,7 +126,9 @@ struct TodayView: View {
 
     @ViewBuilder
     private var todayCard: some View {
-        if let category = todayEntry?.templateCategory {
+        if let session = todaysSession {
+            completedCard(session: session)
+        } else if let category = todayEntry?.templateCategory {
             if let template = recommendedTemplate {
                 workoutCard(template: template, category: category)
             } else {
@@ -122,6 +136,39 @@ struct TodayView: View {
             }
         } else {
             restDayCard
+        }
+    }
+
+    private func completedCard(session: Session) -> some View {
+        let allSets = session.sessionExercises?.flatMap { $0.sets } ?? []
+        let completedCount = allSets.filter(\.completed).count
+        let total = allSets.count
+
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("DONE FOR TODAY")
+                .font(.caption).bold()
+                .foregroundStyle(.secondary)
+            Text(session.status == .skipped ? "Logged — rest up" : "Nice work")
+                .font(.title2).bold()
+            Text(subtitle(status: session.status, completed: completedCount, total: total))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.accentColor.opacity(0.12))
+        )
+    }
+
+    private func subtitle(status: SessionStatus, completed: Int, total: Int) -> String {
+        switch status {
+        case .completed:     return "All \(total) sets logged. See you tomorrow."
+        case .partial:       return "\(completed) of \(total) sets logged. Good enough is good."
+        case .skipped:       return "No sets logged today — that's okay."
+        case .restDayLogged: return "Rest day logged."
+        case .upcoming:      return ""
         }
     }
 
