@@ -17,6 +17,7 @@ import SwiftData
 struct TodayView: View {
     @Bindable var profile: UserProfile
     @State private var activeWorkoutTemplate: WorkoutTemplate?
+    @State private var showingPicker: Bool = false
 
     @Query(sort: \Session.date, order: .reverse) private var allSessions: [Session]
 
@@ -76,6 +77,11 @@ struct TodayView: View {
                     weightUnit: profile.preferredUnit,
                     previousSession: lastSession(for: template)
                 )
+            }
+            .sheet(isPresented: $showingPicker) {
+                WorkoutPickerView(profile: profile) { picked in
+                    activeWorkoutTemplate = picked
+                }
             }
         }
     }
@@ -168,17 +174,28 @@ struct TodayView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            if let template = recommendedTemplate {
+            HStack(spacing: 8) {
+                if let template = recommendedTemplate {
+                    Button {
+                        activeWorkoutTemplate = template
+                    } label: {
+                        Label("Start another", systemImage: "plus.circle")
+                            .font(.footnote)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+
                 Button {
-                    activeWorkoutTemplate = template
+                    showingPicker = true
                 } label: {
-                    Label("Start another workout", systemImage: "plus.circle")
+                    Label("Pick a workout", systemImage: "list.bullet")
                         .font(.footnote)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-                .padding(.top, 4)
             }
+            .padding(.top, 4)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -229,6 +246,16 @@ struct TodayView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .padding(.top, 4)
+
+            Button {
+                showingPicker = true
+            } label: {
+                Label("Swap workout", systemImage: "arrow.left.arrow.right")
+                    .font(.footnote)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -248,6 +275,16 @@ struct TodayView: View {
             Text("We couldn't find a \(category.displayName.lowercased()) template that fits your equipment. Update your equipment list or adjust the schedule.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+
+            Button {
+                showingPicker = true
+            } label: {
+                Label("Pick a workout", systemImage: "list.bullet")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .padding(.top, 4)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -267,6 +304,16 @@ struct TodayView: View {
             Text("Rest is when your body adapts. Hydrate, sleep well, maybe a walk.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+
+            Button {
+                showingPicker = true
+            } label: {
+                Label("Pick a workout anyway", systemImage: "list.bullet")
+                    .font(.footnote)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .padding(.top, 4)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)

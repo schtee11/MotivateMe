@@ -35,4 +35,21 @@ enum TemplateRecommender {
                 return lhs.targetDurationMinutes < rhs.targetDurationMinutes
             }
     }
+
+    // All templates the user qualifies for (any category). Powers the
+    // swap-workout picker — grouped by category in the UI.
+    static func allCandidates(for profile: UserProfile) -> [WorkoutTemplate] {
+        let userEquipment = Set(profile.availableEquipment)
+        let userRank = profile.experienceLevel.rank
+
+        return LibraryStore.shared.workoutTemplates.values
+            .filter { $0.minimumExperienceLevel.rank <= userRank }
+            .filter { Set($0.requiredEquipment).isSubset(of: userEquipment) }
+            .sorted { lhs, rhs in
+                if lhs.templateCategory != rhs.templateCategory {
+                    return lhs.templateCategory.sortOrder < rhs.templateCategory.sortOrder
+                }
+                return lhs.targetDurationMinutes < rhs.targetDurationMinutes
+            }
+    }
 }

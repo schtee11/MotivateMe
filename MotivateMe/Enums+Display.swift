@@ -149,4 +149,45 @@ extension TemplateCategory {
         case .mobility: return "Mobility"
         }
     }
+
+    // Stable ordering for the picker's section headers.
+    var sortOrder: Int {
+        switch self {
+        case .fullBody: return 0
+        case .upper:    return 1
+        case .lower:    return 2
+        case .push:     return 3
+        case .pull:     return 4
+        case .legs:     return 5
+        case .mobility: return 6
+        }
+    }
+}
+
+extension EffortLevel {
+    var displayName: String {
+        switch self {
+        case .easy:     return "Easy"
+        case .moderate: return "Moderate"
+        case .hard:     return "Hard"
+        }
+    }
+
+    // Stored on Session.effortRating as a plain Int for CloudKit simplicity.
+    var rating: Int {
+        switch self {
+        case .easy:     return 1
+        case .moderate: return 2
+        case .hard:     return 3
+        }
+    }
+
+    init?(rating: Int) {
+        switch rating {
+        case 1: self = .easy
+        case 2: self = .moderate
+        case 3: self = .hard
+        default: return nil
+        }
+    }
 }
