@@ -19,6 +19,7 @@ struct ActiveWorkoutView: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var draft: WorkoutDraft
+    @State private var restTimer = RestTimer()
     @State private var showingDiscardConfirmation: Bool = false
     @State private var showingFinishSheet: Bool = false
     let weightUnit: Unit
@@ -35,22 +36,33 @@ struct ActiveWorkoutView: View {
         @Bindable var draft = draft
 
         return NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    header
+            ZStack(alignment: .bottom) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        header
 
-                    ForEach(draft.exerciseDrafts.indices, id: \.self) { index in
-                        ExerciseCard(
-                            draft: $draft.exerciseDrafts[index],
-                            weightUnit: weightUnit
-                        )
+                        ForEach(draft.exerciseDrafts.indices, id: \.self) { index in
+                            ExerciseCard(
+                                draft: $draft.exerciseDrafts[index],
+                                weightUnit: weightUnit,
+                                restTimer: restTimer
+                            )
+                        }
+
+                        finishButton
+                            .padding(.top, 8)
                     }
-
-                    finishButton
-                        .padding(.top, 8)
+                    .padding()
+                    .padding(.bottom, restTimer.isRunning ? 72 : 0)
                 }
-                .padding()
+
+                if restTimer.isRunning {
+                    RestTimerPill(timer: restTimer)
+                        .padding(.bottom, 12)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
+            .animation(.easeInOut(duration: 0.2), value: restTimer.isRunning)
             .navigationTitle(draft.template.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -109,6 +121,7 @@ struct ActiveWorkoutView: View {
 private struct ExerciseCard: View {
     @Binding var draft: ExerciseDraft
     let weightUnit: Unit
+    let restTimer: RestTimer
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -141,7 +154,9 @@ private struct ExerciseCard: View {
                         SetRow(
                             set: $draft.sets[setIndex],
                             targetType: draft.slot.targetType,
-                            weightUnit: weightUnit
+                            weightUnit: weightUnit,
+                            restSeconds: draft.slot.restSeconds,
+                            restTimer: restTimer
                         )
                     }
                 }
@@ -162,6 +177,8 @@ private struct SetRow: View {
     @Binding var set: SetDraft
     let targetType: SlotTargetType
     let weightUnit: Unit
+    let restSeconds: Int
+    let restTimer: RestTimer
 
     var body: some View {
         HStack(spacing: 10) {
@@ -177,7 +194,11 @@ private struct SetRow: View {
             weightField
 
             Button {
+                let wasCompleted = set.completed
                 set.completed.toggle()
+                if !wasCompleted {
+                    restTimer.start(seconds: restSeconds)
+                }
             } label: {
                 Image(systemName: set.completed ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
@@ -283,5 +304,45 @@ private struct SetRow: View {
         case .seconds:
             set.durationSeconds = max(0, (set.durationSeconds ?? 0) - 5)
         }
+    }
+}
+
+// MARK: - Rest timer pill
+
+private struct RestTimerPill: View {
+    @Bindable var timer: RestTimer
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "timer")
+            Text("Rest")
+                .font(.footnote).bold()
+            Text(formatted)
+                .font(.title3).bold().monospacedDigit()
+            Spacer(minLength: 4)
+            Button {
+                timer.stop()
+            } label: {
+                Text("Skip")
+                    .font(.footnote).bold()
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            Capsule()
+                .fill(.regularMaterial)
+                .overlay(Capsule().stroke(Color.secondary.opacity(0.25)))
+        )
+        .padding(.horizontal, 16)
+        .shadow(color: Color.black.opacity(0.1), radius: 8, y: 2)
+    }
+
+    private var formatted: String {
+        let minutes = timer.remaining / 60
+        let seconds = timer.remaining % 60
+        return String(format: "%d:%02d", minutes, seconds)
     }
 }
