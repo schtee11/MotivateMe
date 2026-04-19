@@ -22,8 +22,8 @@ struct ActiveWorkoutView: View {
     @State private var showingDiscardConfirmation: Bool = false
     let weightUnit: Unit
 
-    init(template: WorkoutTemplate, weightUnit: Unit) {
-        _draft = State(initialValue: WorkoutDraft(template: template))
+    init(template: WorkoutTemplate, weightUnit: Unit, previousSession: Session? = nil) {
+        _draft = State(initialValue: WorkoutDraft(template: template, previousSession: previousSession))
         self.weightUnit = weightUnit
     }
 
@@ -209,21 +209,34 @@ private struct SetRow: View {
     }
 
     private var weightField: some View {
-        HStack(spacing: 4) {
-            TextField("Weight", value: $set.weight, format: .number, prompt: Text("wt"))
-                .keyboardType(.decimalPad)
-                .multilineTextAlignment(.trailing)
-                .frame(width: 46)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 4)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color.secondary.opacity(0.35), lineWidth: 1)
-                )
-            Text(weightUnitShort)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        VStack(alignment: .trailing, spacing: 2) {
+            HStack(spacing: 4) {
+                TextField("Weight", value: $set.weight, format: .number, prompt: Text("wt"))
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 46)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.secondary.opacity(0.35), lineWidth: 1)
+                    )
+                Text(weightUnitShort)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if let previous = set.previousWeight {
+                Text("last: \(formatWeight(previous))")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
         }
+    }
+
+    private func formatWeight(_ weight: Double) -> String {
+        weight.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0f", weight)
+            : String(format: "%.1f", weight)
     }
 
     // MARK: - Helpers

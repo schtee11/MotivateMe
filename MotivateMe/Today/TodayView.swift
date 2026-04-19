@@ -40,6 +40,16 @@ struct TodayView: View {
         }
     }
 
+    // Most recent session logged for this template, excluding today's in-progress
+    // one. Used to pre-fill weights so users don't have to re-enter them.
+    private func lastSession(for template: WorkoutTemplate) -> Session? {
+        let calendar = Calendar.current
+        return allSessions.first { session in
+            session.workoutTemplateId == template.id
+                && !calendar.isDate(session.date, inSameDayAs: Date())
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -61,7 +71,11 @@ struct TodayView: View {
                 }
             }
             .fullScreenCover(item: $activeWorkoutTemplate) { template in
-                ActiveWorkoutView(template: template, weightUnit: profile.preferredUnit)
+                ActiveWorkoutView(
+                    template: template,
+                    weightUnit: profile.preferredUnit,
+                    previousSession: lastSession(for: template)
+                )
             }
         }
     }

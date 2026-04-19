@@ -21,11 +21,37 @@ final class WorkoutDraft {
     let startedAt: Date = Date()
     var exerciseDrafts: [ExerciseDraft]
 
-    init(template: WorkoutTemplate) {
+    init(template: WorkoutTemplate, previousSession: Session? = nil) {
         self.template = template
         self.exerciseDrafts = template.exerciseSlots
             .sorted(by: { $0.order < $1.order })
             .map(ExerciseDraft.init)
+        if let previousSession {
+            applyPreviousWeights(from: previousSession)
+        }
+    }
+
+    // Seed weight fields from the user's last session of this template.
+    // Matches by exerciseId + setNumber. Skips sets that logged no weight.
+    private func applyPreviousWeights(from session: Session) {
+        let previousByExercise: [UUID: [SetRecord]] = Dictionary(
+            grouping: session.sessionExercises ?? [],
+            by: { $0.exerciseId }
+        ).mapValues { $0.flatMap(\.sets) }
+
+        for exerciseIndex in exerciseDrafts.indices {
+            let exerciseId = exerciseDrafts[exerciseIndex].slot.fallbackExerciseId
+            guard let previousSets = previousByExercise[exerciseId] else { continue }
+
+            for setIndex in exerciseDrafts[exerciseIndex].sets.indices {
+                let setNumber = exerciseDrafts[exerciseIndex].sets[setIndex].setNumber
+                guard let match = previousSets.first(where: { $0.setNumber == setNumber }),
+                      let weight = match.weight, weight > 0
+                else { continue }
+                exerciseDrafts[exerciseIndex].sets[setIndex].weight = weight
+                exerciseDrafts[exerciseIndex].sets[setIndex].previousWeight = weight
+            }
+        }
     }
 
     // Workflow status derived from what the user actually completed.
@@ -95,6 +121,9 @@ struct SetDraft: Identifiable {
     var reps: Int?
     var durationSeconds: Int?
     var weight: Double?
+    // Snapshot of the weight carried over from the previous session, if any.
+    // Used only for the "last: N" hint under the weight field — never saved.
+    var previousWeight: Double?
     var completed: Bool = false
 
     init(setNumber: Int, slot: ExerciseSlot) {
