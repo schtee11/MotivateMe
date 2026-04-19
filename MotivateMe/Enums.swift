@@ -65,3 +65,9 @@ enum ReadinessSource: String, Codable, CaseIterable {
 enum TemplateCategory: String, Codable, CaseIterable {
     case fullBody, upper, lower, push, pull, legs, mobility
 }
+
+// Whether an ExerciseSlot's target is a rep count or a hold duration.
+// Example: a squat slot uses .reps (8–12); a plank slot uses .seconds (20–45).
+enum SlotTargetType: String, Codable, CaseIterable {
+    case reps, seconds
+}

@@ -31,7 +31,10 @@ final class SessionExercise {
 
 struct SetRecord: Codable, Hashable {
     var setNumber: Int
+    // For counted exercises. Nil on timed (hold) sets.
     var reps: Int?
+    // For timed exercises. Nil on counted sets.
+    var durationSeconds: Int?
     var weight: Double?
     var completed: Bool
 }

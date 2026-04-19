@@ -24,4 +24,8 @@ struct Exercise: Codable, Identifiable, Hashable {
     var demoVideoURL: URL?
     var instructions: String
     var isSelfLimiting: Bool
+    // Natural execution mode: true for holds (plank, dead hang), false for
+    // counted reps (squat, press). Used by templates and workout UI to pick
+    // the right default for `ExerciseSlot.targetType`.
+    var isTimed: Bool
 }
