@@ -29,11 +29,13 @@ struct MotivateMeApp: App {
 
     init() {
         LibraryStore.shared.load()
+        MorningLightTheme.install()
     }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .tint(MMColor.primary)
         }
         .modelContainer(sharedModelContainer)
     }

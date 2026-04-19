@@ -24,6 +24,18 @@ final class RestTimer {
 
     var isRunning: Bool { remaining > 0 }
 
+    /// Total length of the current countdown — used by progress rings.
+    var totalSeconds: Int { total }
+
+    /// Add or subtract seconds from a running countdown. Floors at 1 (we
+    /// don't want a +/- tap to silently end the timer; use stop() for that).
+    func adjust(by seconds: Int) {
+        guard isRunning else { return }
+        let newRemaining = max(1, remaining + seconds)
+        remaining = newRemaining
+        total = max(total, newRemaining)
+    }
+
     func start(seconds: Int) {
         guard seconds > 0 else {
             stop()
