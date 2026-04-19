@@ -22,6 +22,7 @@ struct SessionDetailView: View {
             VStack(alignment: .leading, spacing: 20) {
                 header
                 statCard
+                feedbackCard
                 exerciseList
             }
             .padding()
@@ -95,6 +96,44 @@ struct SessionDetailView: View {
         Rectangle()
             .fill(Color.secondary.opacity(0.2))
             .frame(width: 1, height: 28)
+    }
+
+    @ViewBuilder
+    private var feedbackCard: some View {
+        let effort = session.effortRating.flatMap(EffortLevel.init(rating:))
+        let notes = session.notes?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasNotes = !(notes?.isEmpty ?? true)
+
+        if effort != nil || hasNotes {
+            VStack(alignment: .leading, spacing: 8) {
+                if let effort {
+                    HStack(spacing: 8) {
+                        Image(systemName: "flame")
+                            .foregroundStyle(.secondary)
+                        Text("Effort")
+                            .font(.caption).bold()
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(effort.displayName)
+                            .font(.subheadline).bold()
+                    }
+                }
+                if let notes, hasNotes {
+                    if effort != nil {
+                        Divider()
+                    }
+                    Text(notes)
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                }
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.secondary.opacity(0.08))
+            )
+        }
     }
 
     private func statCell(label: String, value: String) -> some View {

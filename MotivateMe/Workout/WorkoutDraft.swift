@@ -65,13 +65,15 @@ final class WorkoutDraft {
         return .partial
     }
 
-    func save(to context: ModelContext) {
+    func save(to context: ModelContext, effort: EffortLevel? = nil, notes: String? = nil) {
         let session = Session()
         session.workoutTemplateId = template.id
         session.date = startedAt
         session.completedAt = Date()
         session.durationSeconds = Int(Date().timeIntervalSince(startedAt))
         session.status = computedStatus
+        session.effortRating = effort?.rating
+        session.notes = notes
 
         session.sessionExercises = exerciseDrafts.enumerated().map { index, draft in
             let sessionExercise = SessionExercise()

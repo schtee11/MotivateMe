@@ -20,6 +20,7 @@ struct ActiveWorkoutView: View {
 
     @State private var draft: WorkoutDraft
     @State private var showingDiscardConfirmation: Bool = false
+    @State private var showingFinishSheet: Bool = false
     let weightUnit: Unit
 
     init(template: WorkoutTemplate, weightUnit: Unit, previousSession: Session? = nil) {
@@ -69,6 +70,12 @@ struct ActiveWorkoutView: View {
             } message: {
                 Text("Nothing will be saved.")
             }
+            .sheet(isPresented: $showingFinishSheet) {
+                FinishWorkoutSheet { effort, notes in
+                    draft.save(to: modelContext, effort: effort, notes: notes)
+                    dismiss()
+                }
+            }
         }
     }
 
@@ -87,8 +94,7 @@ struct ActiveWorkoutView: View {
 
     private var finishButton: some View {
         Button {
-            draft.save(to: modelContext)
-            dismiss()
+            showingFinishSheet = true
         } label: {
             Text("Finish workout")
                 .frame(maxWidth: .infinity)
