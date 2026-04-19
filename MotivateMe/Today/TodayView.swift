@@ -15,6 +15,7 @@ import SwiftUI
 
 struct TodayView: View {
     @Bindable var profile: UserProfile
+    @State private var activeWorkoutTemplate: WorkoutTemplate?
 
     private var todayWeekday: Weekday { Weekday.from(date: Date()) }
 
@@ -46,6 +47,9 @@ struct TodayView: View {
                         Image(systemName: "calendar")
                     }
                 }
+            }
+            .fullScreenCover(item: $activeWorkoutTemplate) { template in
+                ActiveWorkoutView(template: template, weightUnit: profile.preferredUnit)
             }
         }
     }
@@ -144,7 +148,7 @@ struct TodayView: View {
             .foregroundStyle(.secondary)
 
             Button {
-                // TODO: start workout flow
+                activeWorkoutTemplate = template
             } label: {
                 Text("Start workout")
                     .frame(maxWidth: .infinity)
