@@ -89,6 +89,10 @@ struct OnboardingView: View {
     private func save() {
         let profile = UserProfile()
         draft.apply(to: profile)
+        profile.weeklySchedule = ScheduleGenerator.defaultSchedule(
+            splitStyle: profile.splitStyle,
+            daysPerWeek: profile.daysPerWeek
+        )
         modelContext.insert(profile)
         do {
             try modelContext.save()

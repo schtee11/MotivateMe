@@ -24,6 +24,7 @@ final class UserProfile {
     var committedDays: [Weekday] = []
     var availableEquipment: [Equipment] = []
     var sessionLengthMinutes: Int = 30
+    var weeklySchedule: [ScheduleEntry] = []
     var contraindications: [Contraindication] = []
     var injuryNotes: String?
     var preferredUnit: Unit = Unit.pounds

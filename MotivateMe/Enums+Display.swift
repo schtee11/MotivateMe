@@ -38,6 +38,17 @@ extension ExperienceLevel {
         case .serious:   return "Follow a program, track progress."
         }
     }
+
+    // Ordinal used to compare levels — e.g. to filter templates whose
+    // minimumExperienceLevel a given user qualifies for.
+    var rank: Int {
+        switch self {
+        case .firstTime: return 0
+        case .returning: return 1
+        case .casual:    return 2
+        case .serious:   return 3
+        }
+    }
 }
 
 extension Equipment {
@@ -106,6 +117,36 @@ extension Weekday {
         case .friday:    return "Fri"
         case .saturday:  return "Sat"
         case .sunday:    return "Sun"
+        }
+    }
+
+    // Map Foundation's Calendar weekday component (1 = Sunday) into our
+    // Monday-first domain enum. Extracted so the Today screen and any
+    // future scheduler logic share a single conversion point.
+    static func from(date: Date, calendar: Calendar = .current) -> Weekday {
+        switch calendar.component(.weekday, from: date) {
+        case 1:  return .sunday
+        case 2:  return .monday
+        case 3:  return .tuesday
+        case 4:  return .wednesday
+        case 5:  return .thursday
+        case 6:  return .friday
+        case 7:  return .saturday
+        default: return .monday
+        }
+    }
+}
+
+extension TemplateCategory {
+    var displayName: String {
+        switch self {
+        case .fullBody: return "Full body"
+        case .upper:    return "Upper body"
+        case .lower:    return "Lower body"
+        case .push:     return "Push"
+        case .pull:     return "Pull"
+        case .legs:     return "Legs"
+        case .mobility: return "Mobility"
         }
     }
 }

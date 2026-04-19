@@ -11,49 +11,30 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
 
     var body: some View {
-        if profiles.isEmpty {
-            OnboardingView()
-        } else {
-            TodayPlaceholderView(profile: profiles[0])
-        }
-    }
-}
-
-// Temporary landing view shown post-onboarding until the real Today
-// screen is built. Kept in this file so the router is easy to scan.
-private struct TodayPlaceholderView: View {
-    let profile: UserProfile
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 16) {
-                Text("MotivateMe")
-                    .font(.largeTitle).bold()
-
-                Text("Profile loaded")
-                    .foregroundStyle(.secondary)
-
-                Text("Goals: \(profile.goals.map(\.displayName).sorted().joined(separator: ", "))")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
-                Text("Experience: \(profile.experienceLevel.displayName)")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
-                Text("Schedule: \(profile.daysPerWeek)× / week, \(profile.splitStyle.displayName)")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
-                Text("Library: \(LibraryStore.shared.exercises.count) exercises, \(LibraryStore.shared.workoutTemplates.count) templates")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+        Group {
+            if profiles.isEmpty {
+                OnboardingView()
+            } else {
+                TodayView(profile: profiles[0])
             }
-            .padding()
         }
+        .task { ensureSchedule() }
+    }
+
+    // Profiles created before the schedule feature shipped have no schedule
+    // stored. Regenerate from splitStyle + daysPerWeek the first time we
+    // see such a profile. A no-op otherwise.
+    private func ensureSchedule() {
+        guard let profile = profiles.first, profile.weeklySchedule.isEmpty else { return }
+        profile.weeklySchedule = ScheduleGenerator.defaultSchedule(
+            splitStyle: profile.splitStyle,
+            daysPerWeek: profile.daysPerWeek
+        )
+        try? modelContext.save()
     }
 }
 
