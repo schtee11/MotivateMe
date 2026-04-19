@@ -161,9 +161,12 @@ struct TodayView: View {
 
     private var weekStrip: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(alignment: .lastTextBaseline) {
                 Text("This week")
                     .font(.headline)
+                Text(weekSummaryText)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
                 Spacer()
                 NavigationLink("Edit") {
                     EditScheduleView(profile: profile)
@@ -177,6 +180,22 @@ struct TodayView: View {
                 }
             }
         }
+    }
+
+    // Count of scheduled workout days (non-rest entries) and sessions logged
+    // within the current calendar week. "Workout" here excludes pure rest-day
+    // logs since they don't count toward the planned-workout tally.
+    private var weekSummaryText: String {
+        let planned = profile.weeklySchedule.filter { $0.templateCategory != nil }.count
+        let calendar = Calendar.current
+        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: Date()) else {
+            return ""
+        }
+        let done = allSessions.filter { session in
+            guard session.status != .restDayLogged else { return false }
+            return weekInterval.contains(session.date)
+        }.count
+        return planned == 0 ? "" : "· \(done) of \(planned) done"
     }
 
     private func weekdayPill(_ weekday: Weekday) -> some View {
