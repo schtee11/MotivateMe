@@ -1,0 +1,52 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Xcode — per-user schemes live here; shared ones go in xcshareddata/ and SHOULD be committed
+**/xcuserdata/
+
+# Swift Package Manager
+.build/
+Packages/
+Package.resolved
+.swiftpm/
+.netrc
+
+# CocoaPods (not using, but guard anyway)
+Pods/
+
+# Carthage (not using, but guard anyway)
+Carthage/Build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Secrets / local config
+*.xcconfig.local
+.env
+.env.*
+!.env.example
