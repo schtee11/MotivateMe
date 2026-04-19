@@ -1,0 +1,350 @@
+[
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000001",
+    "name": "Bodyweight Squat",
+    "movementPattern": "squat",
+    "primaryMuscles": [
+      { "muscle": "quads", "weight": 0.45 },
+      { "muscle": "glutes", "weight": 0.35 },
+      { "muscle": "core", "weight": 0.20 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "hamstrings", "weight": 0.25 },
+      { "muscle": "calves", "weight": 0.15 }
+    ],
+    "requiredEquipment": [],
+    "difficultyTier": "tier1",
+    "regressionExerciseId": null,
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000002",
+    "contraindications": [],
+    "formCues": [
+      "Feet shoulder-width",
+      "Knees track toes",
+      "Chest up, core braced",
+      "Sit back, then down"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Stand with feet shoulder-width apart. Sit your hips back and bend your knees to lower your body until thighs are roughly parallel to the floor, then drive through your heels to stand.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000002",
+    "name": "Goblet Squat",
+    "movementPattern": "squat",
+    "primaryMuscles": [
+      { "muscle": "quads", "weight": 0.45 },
+      { "muscle": "glutes", "weight": 0.35 },
+      { "muscle": "core", "weight": 0.20 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "hamstrings", "weight": 0.25 },
+      { "muscle": "calves", "weight": 0.15 },
+      { "muscle": "shoulders", "weight": 0.10 }
+    ],
+    "requiredEquipment": ["dumbbells"],
+    "difficultyTier": "tier1",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000001",
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000005",
+    "contraindications": [],
+    "formCues": [
+      "Hold dumbbell at chest",
+      "Elbows tuck inside knees",
+      "Keep torso upright",
+      "Full depth, controlled"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Hold one dumbbell vertically against your chest with both hands. Squat down keeping your torso upright and elbows inside your knees at the bottom, then stand back up.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000003",
+    "name": "Split Squat",
+    "movementPattern": "squat",
+    "primaryMuscles": [
+      { "muscle": "quads", "weight": 0.50 },
+      { "muscle": "glutes", "weight": 0.35 },
+      { "muscle": "core", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "hamstrings", "weight": 0.25 },
+      { "muscle": "calves", "weight": 0.15 }
+    ],
+    "requiredEquipment": [],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000001",
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000004",
+    "contraindications": ["knees"],
+    "formCues": [
+      "Long stride stance",
+      "Back knee toward floor",
+      "Front shin roughly vertical",
+      "Switch legs each set"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Take a long split stance with one foot forward. Lower your back knee toward the floor while keeping your front shin near vertical, then push back up. Complete all reps on one leg before switching.",
+    "isSelfLimiting": false,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000004",
+    "name": "Bulgarian Split Squat",
+    "movementPattern": "squat",
+    "primaryMuscles": [
+      { "muscle": "quads", "weight": 0.50 },
+      { "muscle": "glutes", "weight": 0.35 },
+      { "muscle": "core", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "hamstrings", "weight": 0.30 },
+      { "muscle": "calves", "weight": 0.15 }
+    ],
+    "requiredEquipment": ["dumbbells", "bench"],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000003",
+    "progressionExerciseId": null,
+    "contraindications": ["knees"],
+    "formCues": [
+      "Rear foot on bench",
+      "Front knee tracks toes",
+      "Slight forward torso lean",
+      "Control the descent"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Place your back foot on a bench behind you, stand a stride away. Lower into a lunge by bending your front knee, then push back up. Hold dumbbells at your sides for load.",
+    "isSelfLimiting": false,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000005",
+    "name": "Dumbbell Squat",
+    "movementPattern": "squat",
+    "primaryMuscles": [
+      { "muscle": "quads", "weight": 0.45 },
+      { "muscle": "glutes", "weight": 0.40 },
+      { "muscle": "core", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "hamstrings", "weight": 0.25 },
+      { "muscle": "forearms", "weight": 0.15 }
+    ],
+    "requiredEquipment": ["dumbbells"],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000002",
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000006",
+    "contraindications": [],
+    "formCues": [
+      "Dumbbells at sides",
+      "Chest up through the lift",
+      "Drive knees out",
+      "Full depth if mobility allows"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Hold a dumbbell in each hand at your sides. Squat down keeping chest tall and weight over mid-foot, then stand up.",
+    "isSelfLimiting": false,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000006",
+    "name": "Barbell Back Squat",
+    "movementPattern": "squat",
+    "primaryMuscles": [
+      { "muscle": "quads", "weight": 0.45 },
+      { "muscle": "glutes", "weight": 0.40 },
+      { "muscle": "core", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "hamstrings", "weight": 0.30 },
+      { "muscle": "back", "weight": 0.20 }
+    ],
+    "requiredEquipment": ["barbell"],
+    "difficultyTier": "tier3",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000005",
+    "progressionExerciseId": null,
+    "contraindications": ["lowerBack", "knees"],
+    "formCues": [
+      "Bar on upper traps",
+      "Big breath, brace core",
+      "Break at hips and knees together",
+      "Drive the floor away to stand"
+    ],
+    "demoVideoURL": null,
+    "instructions": "With a barbell across your upper back, unrack and step back. Squat down under control, then stand up. Keep your torso braced throughout.",
+    "isSelfLimiting": false,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000007",
+    "name": "Glute Bridge",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      { "muscle": "glutes", "weight": 0.60 },
+      { "muscle": "hamstrings", "weight": 0.25 },
+      { "muscle": "core", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "back", "weight": 0.15 }
+    ],
+    "requiredEquipment": [],
+    "difficultyTier": "tier1",
+    "regressionExerciseId": null,
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000008",
+    "contraindications": [],
+    "formCues": [
+      "Feet flat, close to glutes",
+      "Squeeze glutes to lift hips",
+      "Avoid overarching lower back",
+      "Pause at the top"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Lie on your back with knees bent and feet flat on the floor. Drive through your heels to lift your hips until your body forms a straight line from shoulders to knees, squeeze your glutes, then lower.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000008",
+    "name": "Hip Thrust",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      { "muscle": "glutes", "weight": 0.60 },
+      { "muscle": "hamstrings", "weight": 0.25 },
+      { "muscle": "core", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "quads", "weight": 0.20 }
+    ],
+    "requiredEquipment": ["dumbbells", "bench"],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000007",
+    "progressionExerciseId": null,
+    "contraindications": [],
+    "formCues": [
+      "Upper back on bench",
+      "Dumbbell across hip crease",
+      "Tuck chin, ribs down",
+      "Drive through heels"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Sit on the floor with your upper back against a bench, place a dumbbell across your hips. Drive through your heels to lift your hips until torso is parallel to the floor, then lower with control.",
+    "isSelfLimiting": false,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000009",
+    "name": "Dumbbell Romanian Deadlift",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      { "muscle": "hamstrings", "weight": 0.45 },
+      { "muscle": "glutes", "weight": 0.40 },
+      { "muscle": "back", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.25 },
+      { "muscle": "forearms", "weight": 0.20 }
+    ],
+    "requiredEquipment": ["dumbbells"],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000007",
+    "progressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000012",
+    "contraindications": ["lowerBack"],
+    "formCues": [
+      "Soft knees, hinge at hips",
+      "Dumbbells stay close to legs",
+      "Flat back through the range",
+      "Drive hips forward to stand"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Hold dumbbells in front of your thighs. With soft knees, hinge at your hips and lower the weights along the fronts of your legs until you feel a stretch in your hamstrings. Drive your hips forward to return to standing.",
+    "isSelfLimiting": false,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000010",
+    "name": "Kettlebell Swing",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      { "muscle": "glutes", "weight": 0.45 },
+      { "muscle": "hamstrings", "weight": 0.35 },
+      { "muscle": "back", "weight": 0.20 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.30 },
+      { "muscle": "shoulders", "weight": 0.15 }
+    ],
+    "requiredEquipment": ["kettlebells"],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000009",
+    "progressionExerciseId": null,
+    "contraindications": ["lowerBack"],
+    "formCues": [
+      "Hinge, don't squat",
+      "Snap hips to drive the bell",
+      "Arms are ropes",
+      "Bell floats to chest height"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Stand with feet shoulder-width, kettlebell on the floor in front. Hinge forward to grip the bell, hike it between your legs, then snap your hips forward to swing it up to chest height. Let it fall back between your legs under control.",
+    "isSelfLimiting": true,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000011",
+    "name": "Single-Leg Romanian Deadlift",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      { "muscle": "hamstrings", "weight": 0.45 },
+      { "muscle": "glutes", "weight": 0.40 },
+      { "muscle": "core", "weight": 0.15 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "back", "weight": 0.20 },
+      { "muscle": "calves", "weight": 0.15 }
+    ],
+    "requiredEquipment": ["dumbbells"],
+    "difficultyTier": "tier2",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000009",
+    "progressionExerciseId": null,
+    "contraindications": ["lowerBack"],
+    "formCues": [
+      "Single dumbbell, opposite hand",
+      "Hinge, leg extends behind",
+      "Hips stay square to floor",
+      "Slow and balanced"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Hold a dumbbell in one hand. Balance on the opposite leg and hinge forward, extending your free leg behind you for counterbalance, until your torso is roughly parallel to the floor. Return to standing with control.",
+    "isSelfLimiting": false,
+    "isTimed": false
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4000-8000-000000000012",
+    "name": "Barbell Deadlift",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      { "muscle": "hamstrings", "weight": 0.35 },
+      { "muscle": "glutes", "weight": 0.35 },
+      { "muscle": "back", "weight": 0.30 }
+    ],
+    "secondaryMuscles": [
+      { "muscle": "core", "weight": 0.30 },
+      { "muscle": "forearms", "weight": 0.25 },
+      { "muscle": "quads", "weight": 0.20 }
+    ],
+    "requiredEquipment": ["barbell"],
+    "difficultyTier": "tier3",
+    "regressionExerciseId": "a1b2c3d4-e5f6-4000-8000-000000000009",
+    "progressionExerciseId": null,
+    "contraindications": ["lowerBack"],
+    "formCues": [
+      "Bar over mid-foot",
+      "Shoulders slightly ahead of bar",
+      "Flat back, braced core",
+      "Stand up with the bar close"
+    ],
+    "demoVideoURL": null,
+    "instructions": "Stand with the barbell over your mid-foot. Hinge down and grip the bar just outside your knees. Keeping a flat back, drive through your legs and stand up, dragging the bar close to your body.",
+    "isSelfLimiting": false,
+    "isTimed": false
+  }
+]
