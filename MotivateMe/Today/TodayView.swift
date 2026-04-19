@@ -167,6 +167,18 @@ struct TodayView: View {
             Text(subtitle(status: session.status, completed: completedCount, total: total))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+
+            if let template = recommendedTemplate {
+                Button {
+                    activeWorkoutTemplate = template
+                } label: {
+                    Label("Start another workout", systemImage: "plus.circle")
+                        .font(.footnote)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .padding(.top, 4)
+            }
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
