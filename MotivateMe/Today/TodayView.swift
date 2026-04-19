@@ -211,10 +211,36 @@ struct TodayView: View {
     }
 
     private var dateHeader: some View {
-        Text(Date().formatted(.dateTime.weekday(.wide).month().day()))
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        HStack {
+            Text(Date().formatted(.dateTime.weekday(.wide).month().day()))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+            streakPill
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var streakPill: some View {
+        let streak = StreakCalculator.currentStreak(sessions: allSessions, profile: profile)
+        if streak > 0 {
+            HStack(spacing: 4) {
+                Image(systemName: "flame.fill")
+                    .foregroundStyle(.orange)
+                Text("\(streak)")
+                    .font(.subheadline).bold()
+                    .monospacedDigit()
+                Text(streak == 1 ? "day" : "days")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(
+                Capsule().fill(Color.orange.opacity(0.12))
+            )
+        }
     }
 
     @ViewBuilder
