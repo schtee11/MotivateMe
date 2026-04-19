@@ -23,14 +23,14 @@ struct DailyCheckinSheet: View {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text("Low")
+                            Text("Wiped")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Spacer()
                             Text("\(Int(readiness))")
                                 .font(.title2).bold().monospacedDigit()
                             Spacer()
-                            Text("High")
+                            Text("Peak")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -40,7 +40,7 @@ struct DailyCheckinSheet: View {
                 } header: {
                     Text("How ready do you feel?")
                 } footer: {
-                    Text("1 = wiped, 10 = peak. Trust your gut.")
+                    Text("Trust your gut. This adjusts nothing automatically — just a signal for you.")
                 }
 
                 Section("Anything on your mind? (optional)") {
