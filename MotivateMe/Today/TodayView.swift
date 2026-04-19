@@ -87,7 +87,7 @@ struct TodayView: View {
             .fullScreenCover(item: $activeWorkoutTemplate) { template in
                 ActiveWorkoutView(
                     template: template,
-                    weightUnit: profile.preferredUnit,
+                    profile: profile,
                     previousSession: lastSession(for: template)
                 )
             }

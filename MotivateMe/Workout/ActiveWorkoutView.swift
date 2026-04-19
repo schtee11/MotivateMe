@@ -22,11 +22,13 @@ struct ActiveWorkoutView: View {
     @State private var restTimer = RestTimer()
     @State private var showingDiscardConfirmation: Bool = false
     @State private var showingFinishSheet: Bool = false
-    let weightUnit: Unit
+    let profile: UserProfile
+    let previousSession: Session?
 
-    init(template: WorkoutTemplate, weightUnit: Unit, previousSession: Session? = nil) {
+    init(template: WorkoutTemplate, profile: UserProfile, previousSession: Session? = nil) {
         _draft = State(initialValue: WorkoutDraft(template: template, previousSession: previousSession))
-        self.weightUnit = weightUnit
+        self.profile = profile
+        self.previousSession = previousSession
     }
 
     var body: some View {
@@ -44,8 +46,9 @@ struct ActiveWorkoutView: View {
                         ForEach(draft.exerciseDrafts.indices, id: \.self) { index in
                             ExerciseCard(
                                 draft: $draft.exerciseDrafts[index],
-                                weightUnit: weightUnit,
-                                restTimer: restTimer
+                                weightUnit: profile.preferredUnit,
+                                restTimer: restTimer,
+                                profile: profile
                             )
                         }
 
@@ -101,7 +104,47 @@ struct ActiveWorkoutView: View {
             Text("\(draft.template.targetDurationMinutes) min · \(draft.template.exerciseSlots.count) exercises")
                 .font(.footnote)
                 .foregroundStyle(.tertiary)
+
+            if let lastTimeText {
+                HStack(spacing: 4) {
+                    Image(systemName: "clock.arrow.circlepath")
+                    Text(lastTimeText)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.top, 2)
+            }
         }
+    }
+
+    private var lastTimeText: String? {
+        guard let previousSession else { return nil }
+
+        var parts: [String] = []
+        let daysAgo = daysSince(previousSession.date)
+        if daysAgo == 0 {
+            parts.append("earlier today")
+        } else if daysAgo == 1 {
+            parts.append("yesterday")
+        } else {
+            parts.append("\(daysAgo) days ago")
+        }
+
+        if let seconds = previousSession.durationSeconds, seconds > 0 {
+            parts.append("\(seconds / 60) min")
+        }
+        if let rating = previousSession.effortRating,
+           let effort = EffortLevel(rating: rating) {
+            parts.append(effort.displayName.lowercased())
+        }
+        return "Last: " + parts.joined(separator: " · ")
+    }
+
+    private func daysSince(_ date: Date) -> Int {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: date)
+        let today = calendar.startOfDay(for: Date())
+        return calendar.dateComponents([.day], from: start, to: today).day ?? 0
     }
 
     private var finishButton: some View {
@@ -122,6 +165,9 @@ private struct ExerciseCard: View {
     @Binding var draft: ExerciseDraft
     let weightUnit: Unit
     let restTimer: RestTimer
+    let profile: UserProfile
+
+    @State private var showingExercisePicker: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -134,12 +180,26 @@ private struct ExerciseCard: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button(draft.skipped ? "Unskip" : "Skip") {
-                    draft.skipped.toggle()
+                Menu {
+                    Button {
+                        showingExercisePicker = true
+                    } label: {
+                        Label("Swap exercise", systemImage: "arrow.left.arrow.right")
+                    }
+                    Button(role: draft.skipped ? nil : .destructive) {
+                        draft.skipped.toggle()
+                    } label: {
+                        Label(
+                            draft.skipped ? "Unskip" : "Skip exercise",
+                            systemImage: draft.skipped ? "arrow.uturn.backward" : "xmark"
+                        )
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
                 }
-                .font(.footnote)
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .menuStyle(.borderlessButton)
             }
 
             if !draft.skipped {
@@ -156,9 +216,27 @@ private struct ExerciseCard: View {
                             targetType: draft.slot.targetType,
                             weightUnit: weightUnit,
                             restSeconds: draft.slot.restSeconds,
-                            restTimer: restTimer
+                            restTimer: restTimer,
+                            canRemove: setIndex >= draft.slot.sets,
+                            onRemove: { draft.removeSet(id: draft.sets[setIndex].id) }
                         )
                     }
+
+                    Button {
+                        draft.addSet()
+                    } label: {
+                        Label("Add set", systemImage: "plus.circle")
+                            .font(.footnote)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+                }
+
+                if draft.hasAnyCompletedSet {
+                    effortStrip
+                        .padding(.top, 4)
                 }
             }
         }
@@ -168,6 +246,43 @@ private struct ExerciseCard: View {
                 .fill(Color.secondary.opacity(0.08))
         )
         .opacity(draft.skipped ? 0.5 : 1)
+        .sheet(isPresented: $showingExercisePicker) {
+            ExercisePickerView(
+                profile: profile,
+                movementPattern: draft.slot.movementPattern,
+                currentExerciseId: draft.currentExerciseId
+            ) { picked in
+                draft.currentExerciseId = picked.id
+            }
+        }
+    }
+
+    private var effortStrip: some View {
+        HStack(spacing: 6) {
+            Text("Felt:")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            ForEach([EffortLevel.easy, .moderate, .hard], id: \.self) { level in
+                Button {
+                    draft.effort = (draft.effort == level) ? nil : level
+                } label: {
+                    Text(level.displayName)
+                        .font(.caption).bold()
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule().fill(
+                                draft.effort == level
+                                    ? Color.accentColor.opacity(0.2)
+                                    : Color.secondary.opacity(0.1)
+                            )
+                        )
+                        .foregroundStyle(draft.effort == level ? Color.accentColor : .secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+        }
     }
 }
 
@@ -179,6 +294,8 @@ private struct SetRow: View {
     let weightUnit: Unit
     let restSeconds: Int
     let restTimer: RestTimer
+    let canRemove: Bool
+    let onRemove: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -205,6 +322,15 @@ private struct SetRow: View {
                     .foregroundStyle(set.completed ? Color.accentColor : Color.secondary)
             }
             .buttonStyle(.plain)
+
+            if canRemove {
+                Button(action: onRemove) {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.footnote)
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 

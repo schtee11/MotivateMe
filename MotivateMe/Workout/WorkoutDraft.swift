@@ -86,10 +86,11 @@ final class WorkoutDraft {
 
         session.sessionExercises = exerciseDrafts.enumerated().map { index, draft in
             let sessionExercise = SessionExercise()
-            sessionExercise.exerciseId = draft.slot.fallbackExerciseId
+            sessionExercise.exerciseId = draft.currentExerciseId
             sessionExercise.order = index
             sessionExercise.sets = draft.sets.map(\.asRecord)
             sessionExercise.skipped = draft.skipped
+            sessionExercise.effortFeedback = draft.effort?.rawValue
             return sessionExercise
         }
 
@@ -112,16 +113,23 @@ final class WorkoutDraft {
 struct ExerciseDraft: Identifiable {
     var id: UUID = UUID()
     let slot: ExerciseSlot
+    // Defaults to slot.fallbackExerciseId; overridden when the user swaps
+    // in an alternate mid-workout.
+    var currentExerciseId: UUID
     var sets: [SetDraft]
     var skipped: Bool = false
+    // Per-exercise effort bucket captured after the user logs at least one set.
+    // Stored as EffortLevel.rawValue into SessionExercise.effortFeedback.
+    var effort: EffortLevel?
 
     init(slot: ExerciseSlot) {
         self.slot = slot
+        self.currentExerciseId = slot.fallbackExerciseId
         self.sets = (1...max(1, slot.sets)).map { n in SetDraft(setNumber: n, slot: slot) }
     }
 
     var exercise: Exercise? {
-        LibraryStore.shared.exercises[slot.fallbackExerciseId]
+        LibraryStore.shared.exercises[currentExerciseId]
     }
 
     var targetDescription: String {
@@ -130,6 +138,19 @@ struct ExerciseDraft: Identifiable {
             ? "\(slot.targetRangeMin)"
             : "\(slot.targetRangeMin)–\(slot.targetRangeMax)"
         return "\(slot.sets) × \(range) \(unit)"
+    }
+
+    var hasAnyCompletedSet: Bool {
+        sets.contains(where: \.completed)
+    }
+
+    mutating func addSet() {
+        let nextNumber = (sets.map(\.setNumber).max() ?? 0) + 1
+        sets.append(SetDraft(setNumber: nextNumber, slot: slot))
+    }
+
+    mutating func removeSet(id: UUID) {
+        sets.removeAll { $0.id == id }
     }
 }
 
