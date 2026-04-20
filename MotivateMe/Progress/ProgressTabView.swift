@@ -157,12 +157,12 @@ struct ProgressTabView: View {
                     ForEach(weekBuckets) { bucket in
                         VStack(spacing: 8) {
                             GeometryReader { geo in
-                                let max = max(1, weekBuckets.map(\.count).max() ?? 1)
-                                let h = max == 0 ? 0 : CGFloat(bucket.count) / CGFloat(max) * geo.size.height
+                                let peak = Swift.max(1, weekBuckets.map(\.count).max() ?? 1)
+                                let h = CGFloat(bucket.count) / CGFloat(peak) * geo.size.height
                                 ZStack(alignment: .bottom) {
                                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                                         .fill(isCurrent(bucket) ? MMColor.primary : MMColor.primaryMuted)
-                                        .frame(height: max(6, h))
+                                        .frame(height: Swift.max(6, h))
                                 }
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                             }
