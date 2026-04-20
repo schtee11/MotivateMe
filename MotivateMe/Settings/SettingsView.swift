@@ -2,13 +2,13 @@
 //  SettingsView.swift
 //  MotivateMe
 //
-//  Profile editor. Morning Light treatment uses iOS grouped-inset
-//  Sections with colored icon tiles, gentle micro-copy, a "Library" row
-//  group, and a footer affirmation.
+//  Morning Light settings. Grouped-inset list with colored icon tiles,
+//  gentle micro-copy, a featured "gentle part" section with the ethos
+//  quote, and an affirmation footer. Some toggles are purely UI for now
+//  (backed by AppStorage) — their wiring will follow.
 //
-//  Switching split or daysPerWeek offers a one-tap schedule
-//  regeneration alert (the existing schedule may contain categories
-//  the new split doesn't offer).
+//  Changing split or daysPerWeek still offers the one-tap schedule
+//  regeneration alert.
 //
 
 import SwiftUI
@@ -18,13 +18,26 @@ struct SettingsView: View {
 
     @State private var showRegenerateAlert: Bool = false
 
+    // UI-only preferences (see note in file header).
+    @AppStorage("mm.hideStreakNumbers") private var hideStreakNumbers: Bool = false
+    @AppStorage("mm.forgivenessWindow") private var forgivenessWindow: Int = 3
+    @AppStorage("mm.quietMode") private var quietMode: Bool = false
+    @AppStorage("mm.appearance") private var appearancePref: String = "auto"
+    @AppStorage("mm.serifAccents") private var serifAccents: Bool = true
+    @AppStorage("mm.reduceMotion") private var reduceMotion: Bool = false
+    @AppStorage("mm.iCloudBackup") private var iCloudBackup: Bool = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 headerCopy
-                preferencesSection
+                profileSection
+                checkinsSection
+                gentleSection
                 planSection
                 equipmentSection
+                appearanceSection
+                dataSection
                 aboutSection
                 affirmationFooter
             }
@@ -51,14 +64,23 @@ struct SettingsView: View {
             .padding(.horizontal, 4)
     }
 
-    // MARK: - Preferences
+    // MARK: - Profile
 
-    private var preferencesSection: some View {
-        MMSettingsSection(title: "Preferences") {
-            MMSettingsRow(
-                icon: "scalemass.fill",
-                iconBackground: MMColor.secondary
-            ) {
+    private var profileSection: some View {
+        MMSettingsSection(title: "Profile") {
+            MMSettingsRow(icon: "figure.flexibility", iconBackground: MMColor.primary) {
+                MMSettingsLabel(title: "Experience", subtitle: profile.experienceLevel.descriptionText)
+                Spacer(minLength: 8)
+                Picker("Experience", selection: $profile.experienceLevel) {
+                    ForEach(ExperienceLevel.allCases, id: \.self) { level in
+                        Text(level.displayName).tag(level)
+                    }
+                }
+                .pickerStyle(.menu)
+                .tint(MMColor.primary)
+            }
+
+            MMSettingsRow(icon: "scalemass.fill", iconBackground: MMColor.secondary) {
                 MMSettingsLabel(title: "Units", subtitle: "Weight & measurements")
                 Spacer(minLength: 8)
                 Picker("Units", selection: $profile.preferredUnit) {
@@ -71,21 +93,216 @@ struct SettingsView: View {
             }
 
             MMSettingsRow(
-                icon: "figure.flexibility",
-                iconBackground: MMColor.primary,
+                icon: "sun.max.fill",
+                iconBackground: Color(.sRGB, red: 0.909, green: 0.608, blue: 0.243, opacity: 1),
                 isLast: true
             ) {
-                MMSettingsLabel(title: "Experience", subtitle: profile.experienceLevel.descriptionText)
+                MMSettingsLabel(title: "Rhythm", subtitle: "When you prefer to show up")
                 Spacer(minLength: 8)
-                Picker("Experience", selection: $profile.experienceLevel) {
-                    ForEach(ExperienceLevel.allCases, id: \.self) { level in
-                        Text(level.displayName).tag(level)
-                    }
-                }
-                .pickerStyle(.menu)
-                .tint(MMColor.primary)
+                Text(rhythmLabel)
+                    .font(MMFont.callout)
+                    .foregroundStyle(MMColor.textTertiary)
             }
         }
+    }
+
+    private var rhythmLabel: String {
+        let hour = Calendar.current.component(.hour, from: profile.reminderTime)
+        switch hour {
+        case 4..<11:  return "Mornings"
+        case 11..<17: return "Afternoons"
+        default:      return "Evenings"
+        }
+    }
+
+    // MARK: - Check-ins & reminders
+
+    private var checkinsSection: some View {
+        MMSettingsSection(
+            title: "Check-ins & reminders",
+            footer: "Notifications are gentle by default — one a day, plus the ones you set."
+        ) {
+            MMSettingsRow(
+                icon: "bell.fill",
+                iconBackground: Color(.sRGB, red: 0.851, green: 0.459, blue: 0.341, opacity: 1)
+            ) {
+                MMSettingsLabel(title: "Morning check-in",
+                                subtitle: "A one-minute start to your day")
+                Spacer(minLength: 8)
+                Toggle("", isOn: $profile.morningSelfReportEnabled)
+                    .labelsHidden()
+                    .tint(Color(.sRGB, red: 0.204, green: 0.780, blue: 0.349, opacity: 1))
+            }
+
+            MMSettingsRow(
+                icon: "clock.fill",
+                iconBackground: Color(.sRGB, red: 0.478, green: 0.647, blue: 0.722, opacity: 1)
+            ) {
+                MMSettingsLabel(title: "Habit reminders",
+                                subtitle: "For the days you planned")
+                Spacer(minLength: 8)
+                Toggle("", isOn: $profile.notificationsEnabled)
+                    .labelsHidden()
+                    .tint(Color(.sRGB, red: 0.204, green: 0.780, blue: 0.349, opacity: 1))
+            }
+
+            MMSettingsRow(
+                icon: "calendar.badge.checkmark",
+                iconBackground: MMColor.secondary,
+                isLast: true
+            ) {
+                MMSettingsLabel(title: "Weekly check-in",
+                                subtitle: "A Sunday look-back, if you want one")
+                Spacer(minLength: 8)
+                Toggle("", isOn: $profile.weeklyCheckinEnabled)
+                    .labelsHidden()
+                    .tint(Color(.sRGB, red: 0.204, green: 0.780, blue: 0.349, opacity: 1))
+            }
+        }
+    }
+
+    // MARK: - The gentle part
+
+    private var gentleSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                MMEyebrow(text: "The gentle part")
+                Circle()
+                    .fill(MMColor.secondary)
+                    .frame(width: 3, height: 3)
+                Text("the ethos, in switches")
+                    .font(.system(size: 11, weight: .regular, design: .serif).italic())
+                    .foregroundStyle(MMColor.secondary)
+            }
+            .padding(.horizontal, 16)
+
+            VStack(spacing: 0) {
+                gentleQuote
+                Divider().background(MMColor.separator)
+
+                MMSettingsRow(
+                    icon: "flame.fill",
+                    iconBackground: Color(.sRGB, red: 0.909, green: 0.608, blue: 0.243, opacity: 1)
+                ) {
+                    MMSettingsLabel(title: "Hide streak numbers",
+                                    subtitle: "You'll still see progress — without the counter")
+                    Spacer(minLength: 8)
+                    Toggle("", isOn: $hideStreakNumbers)
+                        .labelsHidden()
+                        .tint(Color(.sRGB, red: 0.204, green: 0.780, blue: 0.349, opacity: 1))
+                }
+
+                forgivenessRow
+
+                MMSettingsRow(
+                    icon: "moon.fill",
+                    iconBackground: Color(.sRGB, red: 0.435, green: 0.420, blue: 0.710, opacity: 1),
+                    isLast: true
+                ) {
+                    MMSettingsLabel(title: "Quiet mode",
+                                    subtitle: "Dim stats, numbers, and comparisons for a while")
+                    Spacer(minLength: 8)
+                    Toggle("", isOn: $quietMode)
+                        .labelsHidden()
+                        .tint(Color(.sRGB, red: 0.204, green: 0.780, blue: 0.349, opacity: 1))
+                }
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [MMColor.secondaryTint, MMColor.surfaceCard],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(MMColor.border, lineWidth: 0.5)
+            )
+
+            Text("These are the ones we're most proud of.")
+                .font(.system(size: 13, weight: .regular, design: .serif).italic())
+                .foregroundStyle(MMColor.textTertiary)
+                .padding(.horizontal, 16)
+                .padding(.top, 2)
+        }
+    }
+
+    private var gentleQuote: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text("\u{201C}")
+                .font(.system(size: 36, weight: .regular, design: .serif).italic())
+                .foregroundStyle(MMColor.secondary)
+                .offset(y: 2)
+            Text("Missing days is part of life, not a failure. These switches decide how we respond.")
+                .font(.system(size: 15, weight: .regular, design: .serif).italic())
+                .foregroundStyle(MMColor.textPrimary)
+                .lineSpacing(3)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 14)
+    }
+
+    private var forgivenessRow: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color(.sRGB, red: 0.545, green: 0.655, blue: 0.420, opacity: 1))
+                    .frame(width: 30, height: 30)
+                    .overlay(
+                        Image(systemName: "leaf.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white)
+                    )
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Forgiveness window")
+                        .font(MMFont.callout)
+                        .foregroundStyle(MMColor.textPrimary)
+                    Text("Days you can miss before anything changes")
+                        .font(MMFont.caption1)
+                        .foregroundStyle(MMColor.textTertiary)
+                }
+                Spacer(minLength: 8)
+                Text("\(forgivenessWindow) \(forgivenessWindow == 1 ? "day" : "days")")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(MMColor.primary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(MMColor.primaryTint))
+            }
+
+            Slider(
+                value: Binding(
+                    get: { Double(forgivenessWindow) },
+                    set: { forgivenessWindow = Int($0.rounded()) }
+                ),
+                in: 0...7,
+                step: 1
+            )
+            .tint(MMColor.primary)
+
+            HStack {
+                Text("Strict")
+                Spacer()
+                Text("Balanced")
+                Spacer()
+                Text("Forgiving")
+            }
+            .font(MMFont.caption2)
+            .foregroundStyle(MMColor.textTertiary)
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 14)
+        .overlay(
+            Rectangle()
+                .fill(MMColor.separator)
+                .frame(height: 0.5)
+                .padding(.leading, 14),
+            alignment: .top
+        )
     }
 
     // MARK: - Plan
@@ -95,10 +312,7 @@ struct SettingsView: View {
             title: "Your plan",
             footer: "Changing split or days offers a one-tap schedule regeneration."
         ) {
-            MMSettingsRow(
-                icon: "rectangle.split.3x1.fill",
-                iconBackground: MMColor.primary
-            ) {
+            MMSettingsRow(icon: "rectangle.split.3x1.fill", iconBackground: MMColor.primary) {
                 MMSettingsLabel(title: "Split style")
                 Spacer(minLength: 8)
                 Picker("Split style", selection: Binding(
@@ -118,10 +332,7 @@ struct SettingsView: View {
                 .tint(MMColor.primary)
             }
 
-            MMSettingsRow(
-                icon: "calendar",
-                iconBackground: MMColor.secondary
-            ) {
+            MMSettingsRow(icon: "calendar", iconBackground: MMColor.secondary) {
                 MMSettingsLabel(title: "Days per week")
                 Spacer(minLength: 8)
                 Stepper(value: Binding(
@@ -143,8 +354,8 @@ struct SettingsView: View {
             }
 
             MMSettingsRow(
-                icon: "clock.fill",
-                iconBackground: Color(.sRGB, red: 0.475, green: 0.647, blue: 0.722, opacity: 1)
+                icon: "timer",
+                iconBackground: Color(.sRGB, red: 0.478, green: 0.647, blue: 0.722, opacity: 1)
             ) {
                 MMSettingsLabel(title: "Session length")
                 Spacer(minLength: 8)
@@ -209,18 +420,143 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - Appearance
+
+    private var appearanceSection: some View {
+        MMSettingsSection(title: "Appearance") {
+            MMSettingsRow(
+                icon: "sun.max.fill",
+                iconBackground: Color(.sRGB, red: 0.909, green: 0.608, blue: 0.243, opacity: 1)
+            ) {
+                MMSettingsLabel(title: "Theme")
+                Spacer(minLength: 8)
+                Picker("Theme", selection: $appearancePref) {
+                    Text("Light").tag("light")
+                    Text("Auto").tag("auto")
+                    Text("Dark").tag("dark")
+                }
+                .pickerStyle(.segmented)
+                .fixedSize()
+            }
+
+            MMSettingsRow(icon: "pencil", iconBackground: MMColor.primary) {
+                MMSettingsLabel(title: "Serif accents",
+                                subtitle: "The soft italic touch on key moments")
+                Spacer(minLength: 8)
+                Toggle("", isOn: $serifAccents)
+                    .labelsHidden()
+                    .tint(Color(.sRGB, red: 0.204, green: 0.780, blue: 0.349, opacity: 1))
+            }
+
+            MMSettingsRow(
+                icon: "circle.fill",
+                iconBackground: Color(.sRGB, red: 0.627, green: 0.545, blue: 0.710, opacity: 1),
+                isLast: true
+            ) {
+                MMSettingsLabel(title: "Reduce motion")
+                Spacer(minLength: 8)
+                Toggle("", isOn: $reduceMotion)
+                    .labelsHidden()
+                    .tint(Color(.sRGB, red: 0.204, green: 0.780, blue: 0.349, opacity: 1))
+            }
+        }
+    }
+
+    // MARK: - Your data
+
+    private var dataSection: some View {
+        MMSettingsSection(
+            title: "Your data",
+            footer: "This app stores everything on your device by default."
+        ) {
+            MMSettingsRow(
+                icon: "icloud.fill",
+                iconBackground: Color(.sRGB, red: 0.478, green: 0.647, blue: 0.722, opacity: 1)
+            ) {
+                MMSettingsLabel(
+                    title: "Back up to iCloud",
+                    subtitle: iCloudBackup ? "Synced to your Apple ID" : "Off — data stays on this phone"
+                )
+                Spacer(minLength: 8)
+                Toggle("", isOn: $iCloudBackup)
+                    .labelsHidden()
+                    .tint(Color(.sRGB, red: 0.204, green: 0.780, blue: 0.349, opacity: 1))
+            }
+
+            MMSettingsRow(
+                icon: "square.and.arrow.up",
+                iconBackground: Color(.sRGB, red: 0.545, green: 0.655, blue: 0.420, opacity: 1)
+            ) {
+                MMSettingsLabel(title: "Export your data", subtitle: "As plain text or JSON")
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(MMColor.textTertiary)
+            }
+
+            MMSettingsRow(
+                icon: "square.and.arrow.down",
+                iconBackground: Color(.sRGB, red: 0.604, green: 0.580, blue: 0.533, opacity: 1)
+            ) {
+                MMSettingsLabel(title: "Import from another app")
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(MMColor.textTertiary)
+            }
+
+            MMSettingsRow(
+                icon: "trash.fill",
+                iconBackground: Color(.sRGB, red: 0.769, green: 0.353, blue: 0.353, opacity: 1),
+                isLast: true
+            ) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Delete everything")
+                        .font(MMFont.callout)
+                        .foregroundStyle(Color(.sRGB, red: 0.769, green: 0.353, blue: 0.353, opacity: 1))
+                    Text("Fully and permanently — no 30-day recovery")
+                        .font(MMFont.caption1)
+                        .foregroundStyle(MMColor.textTertiary)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(MMColor.textTertiary)
+            }
+        }
+    }
+
     // MARK: - About
 
     private var aboutSection: some View {
         MMSettingsSection(title: "About") {
             MMSettingsRow(
                 icon: "info.circle.fill",
-                iconBackground: MMColor.textSecondary
+                iconBackground: Color(.sRGB, red: 0.604, green: 0.580, blue: 0.533, opacity: 1)
             ) {
                 MMSettingsLabel(title: "Version")
                 Spacer(minLength: 8)
-                Text("1.0 · Morning Light")
+                Text("1.4 · Morning Light")
                     .font(MMFont.callout)
+                    .foregroundStyle(MMColor.textTertiary)
+            }
+
+            MMSettingsRow(icon: "book.fill", iconBackground: MMColor.secondary) {
+                MMSettingsLabel(title: "Help & guides")
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(MMColor.textTertiary)
+            }
+
+            MMSettingsRow(
+                icon: "leaf.fill",
+                iconBackground: Color(.sRGB, red: 0.545, green: 0.655, blue: 0.420, opacity: 1)
+            ) {
+                MMSettingsLabel(title: "Privacy \u{00B7} Terms")
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(MMColor.textTertiary)
             }
 
