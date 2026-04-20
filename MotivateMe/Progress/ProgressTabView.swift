@@ -240,8 +240,11 @@ struct ProgressTabView: View {
 
     private var weeklySummaryText: Text {
         let cal = Calendar.current
+        let highlight: (String) -> Text = { phrase in
+            Text(phrase).foregroundColor(MMColor.primary).italic()
+        }
         guard let week = cal.dateInterval(of: .weekOfYear, for: Date()) else {
-            return Text("A quiet week. ") + Text("That counts too.").foregroundColor(MMColor.primary).italic()
+            return Text("A quiet week. \(highlight("That counts too."))")
         }
         let workouts = allSessions.filter {
             $0.status != .restDayLogged && $0.status != .upcoming && week.contains($0.date)
@@ -250,12 +253,11 @@ struct ProgressTabView: View {
         let plannedDays = profile.weeklySchedule.filter { $0.templateCategory != nil }.count
 
         if workouts == 0 && restDays == 0 {
-            return Text("A blank slate. ") + Text("Today's a fine day to start.").foregroundColor(MMColor.primary).italic()
+            return Text("A blank slate. \(highlight("Today's a fine day to start."))")
         }
         let plan = plannedDays > 0 ? "\(workouts) of \(plannedDays) planned workouts" : "\(workouts) workout\(workouts == 1 ? "" : "s")"
         let rest = restDays > 0 ? " \(restDays) rest day\(restDays == 1 ? "" : "s"), taken on purpose." : ""
-        return Text("\(plan).\(rest) ")
-            + Text("That's a lot of small yeses.").foregroundColor(MMColor.primary).italic()
+        return Text("\(plan).\(rest) \(highlight("That's a lot of small yeses."))")
     }
 
     // MARK: - Body
