@@ -28,6 +28,7 @@ struct HistoryView: View {
                 } else {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
+                            heroHeader
                             summaryStrip
                             searchField
                             filterChips
@@ -41,8 +42,33 @@ struct HistoryView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle("History")
+            .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    // MARK: - Hero header
+
+    private var heroHeader: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            MMEyebrow(text: heroEyebrow)
+            Text("History")
+                .font(MMFont.largeTitle)
+                .foregroundStyle(MMColor.textPrimary)
+            Text("Every session you showed up for. Nothing lost.")
+                .font(MMFont.subhead)
+                .foregroundStyle(MMColor.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 6)
+        .padding(.bottom, 4)
+    }
+
+    private var heroEyebrow: String {
+        let cal = Calendar.current
+        let dates = Set(sessions.map { cal.startOfDay(for: $0.date) })
+        guard let earliest = dates.min() else { return "—" }
+        let span = max(1, cal.dateComponents([.day], from: earliest, to: cal.startOfDay(for: Date())).day ?? 0) + 1
+        return "Last \(min(365, span)) days"
     }
 
     // MARK: - Filtering

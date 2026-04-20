@@ -23,8 +23,11 @@ struct ActiveWorkoutView: View {
     @State private var restTimer = RestTimer()
     @State private var showingDiscardConfirmation: Bool = false
     @State private var showingFinishSheet: Bool = false
+    @State private var elapsed: Int = 0
     let profile: UserProfile
     let previousSession: Session?
+
+    private let elapsedTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     init(template: WorkoutTemplate, profile: UserProfile, previousSession: Session? = nil) {
         _draft = State(initialValue: WorkoutDraft(template: template, previousSession: previousSession))
@@ -42,6 +45,10 @@ struct ActiveWorkoutView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
                         header
+                        progressBar
+                        if draft.exerciseDrafts.count > 1 {
+                            exerciseChipStrip
+                        }
 
                         ForEach(draft.exerciseDrafts.indices, id: \.self) { index in
                             ExerciseCard(
@@ -73,17 +80,30 @@ struct ActiveWorkoutView: View {
             }
             .animation(.spring(response: 0.35, dampingFraction: 0.85), value: restTimer.isRunning)
             .navigationBarTitleDisplayMode(.inline)
+            .onReceive(elapsedTimer) { _ in
+                elapsed = Int(Date().timeIntervalSince(draft.startedAt))
+            }
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text(draft.template.name)
-                        .font(MMFont.headline)
-                        .foregroundStyle(MMColor.textPrimary)
-                }
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") {
+                    Button {
                         showingDiscardConfirmation = true
+                    } label: {
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(MMColor.textSecondary)
+                            .frame(width: 32, height: 32)
+                            .background(Circle().fill(MMColor.surfaceInput))
                     }
-                    .foregroundStyle(MMColor.primary)
+                    .accessibilityLabel("Close workout")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Text(formatElapsed(elapsed))
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(MMColor.primary)
+                        .monospacedDigit()
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Capsule().fill(MMColor.primaryTint))
                 }
             }
             .confirmationDialog(
@@ -107,11 +127,11 @@ struct ActiveWorkoutView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
-            if let summary = draft.template.summary {
-                Text(summary)
-                    .font(MMFont.subhead)
-                    .foregroundStyle(MMColor.textSecondary)
-            }
+            MMEyebrow(text: "Active session", color: MMColor.primary)
+            Text(draft.template.name)
+                .font(MMFont.title1)
+                .foregroundStyle(MMColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 12) {
                 Label("\(draft.template.targetDurationMinutes) min", systemImage: "clock")
                 Label("\(draft.template.exerciseSlots.count) exercises", systemImage: "list.bullet")
@@ -127,6 +147,75 @@ struct ActiveWorkoutView: View {
             }
         }
         .padding(.bottom, 2)
+    }
+
+    private var progressBar: some View {
+        let totalSets = draft.exerciseDrafts.reduce(0) { $0 + $1.sets.count }
+        let doneSets = draft.exerciseDrafts.reduce(0) { $0 + $1.sets.filter(\.completed).count }
+        let progress = totalSets > 0 ? Double(doneSets) / Double(totalSets) : 0
+        let percent = Int((progress * 100).rounded())
+
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("\(doneSets) of \(totalSets) sets")
+                    .font(MMFont.caption1.weight(.semibold))
+                    .foregroundStyle(MMColor.textSecondary)
+                Spacer()
+                Text("\(percent)%")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(MMColor.primary)
+                    .monospacedDigit()
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(MMColor.surfaceInput)
+                        .frame(height: 8)
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [MMColor.primary, MMColor.primaryHover],
+                                startPoint: .leading, endPoint: .trailing
+                            )
+                        )
+                        .frame(width: max(0, geo.size.width * CGFloat(progress)), height: 8)
+                }
+            }
+            .frame(height: 8)
+        }
+    }
+
+    private var exerciseChipStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Array(draft.exerciseDrafts.enumerated()), id: \.offset) { index, item in
+                    let isDone = item.sets.allSatisfy(\.completed) && !item.sets.isEmpty
+                    let isActive = !isDone && firstUnfinishedIndex == index
+                    ExerciseChip(
+                        number: index + 1,
+                        title: chipName(item),
+                        state: isDone ? .done : (isActive ? .active : .upcoming)
+                    )
+                }
+            }
+            .padding(.horizontal, 2)
+        }
+    }
+
+    private var firstUnfinishedIndex: Int {
+        draft.exerciseDrafts.firstIndex { !$0.sets.allSatisfy(\.completed) || $0.sets.isEmpty } ?? 0
+    }
+
+    private func chipName(_ item: ExerciseDraft) -> String {
+        let name = item.exercise?.name ?? "Exercise"
+        if name.count <= 14 { return name }
+        return String(name.prefix(13)) + "…"
+    }
+
+    private func formatElapsed(_ s: Int) -> String {
+        let m = s / 60
+        let r = s % 60
+        return String(format: "%d:%02d", m, r)
     }
 
     private var lastTimeText: String? {
@@ -157,6 +246,77 @@ struct ActiveWorkoutView: View {
         let start = calendar.startOfDay(for: date)
         let today = calendar.startOfDay(for: Date())
         return calendar.dateComponents([.day], from: start, to: today).day ?? 0
+    }
+}
+
+// MARK: - Exercise chip (top strip)
+
+private struct ExerciseChip: View {
+    enum State { case active, done, upcoming }
+    let number: Int
+    let title: String
+    let state: State
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .fill(numberBg)
+                    .frame(width: 22, height: 22)
+                if state == .done {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(MMColor.onPrimary)
+                } else {
+                    Text("\(number)")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(numberFg)
+                }
+            }
+            Text(title)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(textColor)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(
+            Capsule(style: .continuous)
+                .fill(chipBg)
+        )
+        .overlay(
+            Capsule(style: .continuous)
+                .strokeBorder(state == .active ? MMColor.primary : .clear, lineWidth: 1.5)
+        )
+    }
+
+    private var chipBg: Color {
+        switch state {
+        case .active:   return MMColor.primaryTint
+        case .done:     return MMColor.secondaryTint
+        case .upcoming: return MMColor.surfaceInput
+        }
+    }
+    private var textColor: Color {
+        switch state {
+        case .active:   return MMColor.primary
+        case .done:     return MMColor.secondary
+        case .upcoming: return MMColor.textSecondary
+        }
+    }
+    private var numberBg: Color {
+        switch state {
+        case .active:   return MMColor.primary
+        case .done:     return MMColor.secondary
+        case .upcoming: return MMColor.surfaceCard
+        }
+    }
+    private var numberFg: Color {
+        switch state {
+        case .active:   return MMColor.onPrimary
+        case .done:     return MMColor.onPrimary
+        case .upcoming: return MMColor.textSecondary
+        }
     }
 }
 

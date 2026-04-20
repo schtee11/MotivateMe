@@ -12,6 +12,104 @@ import Foundation
 
 enum ProgressStats {
 
+    enum Range: String, CaseIterable, Identifiable {
+        case week, month, quarter
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .week:    return "Week"
+            case .month:   return "Month"
+            case .quarter: return "90 days"
+            }
+        }
+        var days: Int {
+            switch self {
+            case .week:    return 7
+            case .month:   return 30
+            case .quarter: return 90
+            }
+        }
+        var eyebrow: String {
+            switch self {
+            case .week:    return "Last 7 days"
+            case .month:   return "Last 30 days"
+            case .quarter: return "Last 90 days"
+            }
+        }
+    }
+
+    /// Total completed-set count across `sessions` whose date falls within
+    /// the last `days` calendar days. Excludes rest-day logs.
+    static func totalSets(
+        _ sessions: [Session],
+        inLast days: Int,
+        today: Date = Date(),
+        calendar: Calendar = .current
+    ) -> Int {
+        let startOfToday = calendar.startOfDay(for: today)
+        guard let earliest = calendar.date(byAdding: .day, value: -(days - 1), to: startOfToday) else {
+            return 0
+        }
+        return sessions.filter { session in
+            session.status != .restDayLogged && session.date >= earliest
+        }.reduce(0) { acc, session in
+            acc + (session.sessionExercises ?? []).reduce(0) { $0 + $1.sets.filter(\.completed).count }
+        }
+    }
+
+    /// Average readiness across the last `days` of check-ins. Returns nil
+    /// if there are no check-ins with a readiness score in the window.
+    static func averageReadiness(
+        _ checkins: [DailyCheckin],
+        inLast days: Int,
+        today: Date = Date(),
+        calendar: Calendar = .current
+    ) -> Double? {
+        let startOfToday = calendar.startOfDay(for: today)
+        guard let earliest = calendar.date(byAdding: .day, value: -(days - 1), to: startOfToday) else {
+            return nil
+        }
+        let scores = checkins.compactMap { c -> Int? in
+            guard c.date >= earliest, let r = c.readinessScore else { return nil }
+            return r
+        }
+        guard !scores.isEmpty else { return nil }
+        return Double(scores.reduce(0, +)) / Double(scores.count)
+    }
+
+    /// Volume per week (last `weeks` weeks). Each value is the count of
+    /// completed sets in that calendar week. Used by the trend line chart.
+    static func weeklyVolumes(
+        _ sessions: [Session],
+        weeks: Int = 12,
+        today: Date = Date(),
+        calendar: Calendar = .current
+    ) -> [Int] {
+        var values: [Int] = []
+        for offset in stride(from: weeks - 1, through: 0, by: -1) {
+            guard let weekDate = calendar.date(byAdding: .weekOfYear, value: -offset, to: today),
+                  let interval = calendar.dateInterval(of: .weekOfYear, for: weekDate) else {
+                values.append(0); continue
+            }
+            let setCount = sessions
+                .filter { $0.status != .restDayLogged && interval.contains($0.date) }
+                .reduce(0) { $0 + ($1.sessionExercises ?? []).reduce(0) { $0 + $1.sets.filter(\.completed).count } }
+            values.append(setCount)
+        }
+        return values
+    }
+
+    /// Percent change between the latest week and the prior one. Returns
+    /// nil if there isn't enough data for a clean comparison.
+    static func volumeTrendPercent(_ weeklyVolumes: [Int]) -> Int? {
+        guard weeklyVolumes.count >= 2 else { return nil }
+        let recent = weeklyVolumes.last ?? 0
+        let prior = weeklyVolumes[weeklyVolumes.count - 2]
+        guard prior > 0 else { return recent > 0 ? 100 : nil }
+        let pct = Double(recent - prior) / Double(prior) * 100
+        return Int(pct.rounded())
+    }
+
     struct WeekBucket: Identifiable {
         var id: Date { weekStart }
         let weekStart: Date
