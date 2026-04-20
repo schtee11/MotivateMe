@@ -20,6 +20,8 @@ struct TodayView: View {
     @State private var showingLighterPicker: Bool = false
     @State private var showingCheckin: Bool = false
 
+    @AppStorage("mm.userName") private var userName: String = ""
+
     @Query(sort: \Session.date, order: .reverse) private var allSessions: [Session]
     @Query(sort: \DailyCheckin.date, order: .reverse) private var allCheckins: [DailyCheckin]
 
@@ -60,11 +62,22 @@ struct TodayView: View {
 
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: Date())
+        let base: String
         switch hour {
-        case ..<12: return "Good morning"
-        case ..<18: return "Good afternoon"
-        default:    return "Good evening"
+        case ..<12: base = "Good morning"
+        case ..<18: base = "Good afternoon"
+        default:    base = "Good evening"
         }
+        let trimmed = userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? base : "\(base), \(trimmed)"
+    }
+
+    private var userInitials: String? {
+        let trimmed = userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let parts = trimmed.split(separator: " ").prefix(2)
+        let letters = parts.compactMap(\.first).map(String.init).joined()
+        return letters.isEmpty ? nil : letters.uppercased()
     }
 
     var body: some View {
@@ -73,8 +86,10 @@ struct TodayView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     header
                     checkinBanner
-                    streakHero
-                    todaysPlanSection
+                    if currentStreak > 0 {
+                        StreakHero(days: currentStreak, message: streakMessage(currentStreak))
+                    }
+                    todaysFocusSection
                     weeklyRhythmCard
                     encouragementCard
                 }
@@ -93,9 +108,15 @@ struct TodayView: View {
                             Circle()
                                 .fill(MMColor.secondaryMuted)
                                 .frame(width: 34, height: 34)
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(MMColor.secondary)
+                            if let initials = userInitials {
+                                Text(initials)
+                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(MMColor.secondary)
+                            } else {
+                                Image(systemName: "person.fill")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(MMColor.secondary)
+                            }
                         }
                     }
                     .accessibilityLabel("Settings")
@@ -174,10 +195,33 @@ struct TodayView: View {
         }
     }
 
-    // MARK: - Streak hero / today card
+    // MARK: - Today's focus (workout / rest / completed)
+
+    private var todaysFocusSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Today's focus")
+                    .font(MMFont.title3)
+                    .foregroundStyle(MMColor.textPrimary)
+                Spacer()
+                Text(focusEyebrow)
+                    .font(MMFont.footnote)
+                    .foregroundStyle(MMColor.textSecondary)
+            }
+            .padding(.horizontal, 4)
+
+            focusCard
+        }
+    }
+
+    private var focusEyebrow: String {
+        if todaysSession != nil { return "Done" }
+        if let category = todayEntry?.templateCategory { return category.displayName }
+        return "Rest day"
+    }
 
     @ViewBuilder
-    private var streakHero: some View {
+    private var focusCard: some View {
         if let session = todaysSession {
             completedCard(session: session)
         } else if let category = todayEntry?.templateCategory {
@@ -375,17 +419,7 @@ struct TodayView: View {
         }
     }
 
-    // MARK: - Today's plan strip
-
-    @ViewBuilder
-    private var todaysPlanSection: some View {
-        if currentStreak > 0 {
-            StreakHero(
-                days: currentStreak,
-                message: streakMessage(currentStreak)
-            )
-        }
-    }
+    // MARK: - Streak message
 
     private func streakMessage(_ days: Int) -> String {
         switch days {
