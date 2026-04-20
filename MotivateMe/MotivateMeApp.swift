@@ -17,6 +17,7 @@ struct MotivateMeApp: App {
             SessionExercise.self,
             BodyMeasurement.self,
             DailyCheckin.self,
+            JournalEntry.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

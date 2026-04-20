@@ -85,13 +85,30 @@ struct TodayView: View {
             .background(MMColor.bg.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .topBarLeading) {
                     NavigationLink {
-                        EditScheduleView(profile: profile)
+                        SettingsView(profile: profile)
                     } label: {
-                        Image(systemName: "calendar")
-                            .foregroundStyle(MMColor.primary)
+                        ZStack {
+                            Circle()
+                                .fill(MMColor.secondaryMuted)
+                                .frame(width: 34, height: 34)
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(MMColor.secondary)
+                        }
                     }
+                    .accessibilityLabel("Settings")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingCheckin = true
+                    } label: {
+                        Image(systemName: "bell")
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundStyle(MMColor.textSecondary)
+                    }
+                    .accessibilityLabel("Check-in")
                 }
             }
             .fullScreenCover(item: $activeWorkoutTemplate) { template in
@@ -120,21 +137,16 @@ struct TodayView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .center) {
-                Text(Date().formatted(.dateTime.weekday(.wide).month().day()))
-                    .font(MMFont.footnote)
-                    .foregroundStyle(MMColor.textSecondary)
-                Spacer()
-                if currentStreak > 0 {
-                    MMStreakChip(days: currentStreak)
-                }
-            }
+        VStack(alignment: .leading, spacing: 2) {
+            Text(Date().formatted(.dateTime.weekday(.wide).month().day()))
+                .font(MMFont.footnote)
+                .foregroundStyle(MMColor.textSecondary)
             Text(greeting)
                 .font(MMFont.largeTitle)
                 .foregroundStyle(MMColor.textPrimary)
         }
-        .padding(.top, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 4)
     }
 
     // MARK: - Check-in banner

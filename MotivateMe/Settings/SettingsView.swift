@@ -19,30 +19,29 @@ struct SettingsView: View {
     @State private var showRegenerateAlert: Bool = false
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    headerCopy
-                    preferencesSection
-                    planSection
-                    equipmentSection
-                    aboutSection
-                    affirmationFooter
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 4)
-                .padding(.bottom, 32)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                headerCopy
+                preferencesSection
+                planSection
+                equipmentSection
+                aboutSection
+                affirmationFooter
             }
-            .scrollContentBackground(.hidden)
-            .background(MMColor.bg.ignoresSafeArea())
-            .navigationTitle("Settings")
-            .alert(
-                "Regenerate schedule?",
-                isPresented: $showRegenerateAlert,
-                actions: regenerateActions,
-                message: { Text("Your weekly plan changed. Regenerate workout days to match? Your custom edits will be replaced.") }
-            )
+            .padding(.horizontal, 16)
+            .padding(.top, 4)
+            .padding(.bottom, 32)
         }
+        .scrollContentBackground(.hidden)
+        .background(MMColor.bg.ignoresSafeArea())
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.large)
+        .alert(
+            "Regenerate schedule?",
+            isPresented: $showRegenerateAlert,
+            actions: regenerateActions,
+            message: { Text("Your weekly plan changed. Regenerate workout days to match? Your custom edits will be replaced.") }
+        )
     }
 
     private var headerCopy: some View {

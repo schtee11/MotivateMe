@@ -40,10 +40,10 @@ enum MMColor {
 
     // MARK: - Brand (peach primary, sage secondary)
 
-    static let primary       = dynamic(light: 0xD77E55, dark: 0xD77E55)
-    static let primaryHover  = dynamic(light: 0xC16544, dark: 0xC16544)
-    static let primaryMuted  = dynamic(light: 0xF5DCC4, dark: 0x7A3C2E)
-    static let primaryTint   = dynamic(light: 0xFBEDE3, dark: 0x3A2A1F)
+    static let primary       = dynamic(light: 0xE89F80, dark: 0xE89F80)
+    static let primaryHover  = dynamic(light: 0xD0876A, dark: 0xD0876A)
+    static let primaryMuted  = dynamic(light: 0xF7E3D2, dark: 0x7A3C2E)
+    static let primaryTint   = dynamic(light: 0xFCEFE5, dark: 0x3A2A1F)
     static let onPrimary     = Color.white
 
     static let secondary     = dynamic(light: 0x7F8C66, dark: 0x94A079)
@@ -64,12 +64,12 @@ enum MMColor {
     // MARK: - Heatmap & ring scales (peach 100..600)
 
     static let peachScale: [Color] = [
-        dynamic(light: 0xFBEDE3, dark: 0x3A2A1F), // 100
-        dynamic(light: 0xEFC4A0, dark: 0x5A3729),
-        dynamic(light: 0xE8AB80, dark: 0x7A3C2E),
-        dynamic(light: 0xE29569, dark: 0x9F4F39),
-        dynamic(light: 0xD77E55, dark: 0xD77E55), // 500
-        dynamic(light: 0xC16544, dark: 0xE2966C),
+        dynamic(light: 0xFCEFE5, dark: 0x3A2A1F), // 100
+        dynamic(light: 0xF4D2B4, dark: 0x5A3729),
+        dynamic(light: 0xEEBB97, dark: 0x7A3C2E),
+        dynamic(light: 0xEAAE89, dark: 0x9F4F39),
+        dynamic(light: 0xE89F80, dark: 0xE89F80), // 500
+        dynamic(light: 0xD0876A, dark: 0xEFB69A),
     ]
 
     // MARK: - Helpers
