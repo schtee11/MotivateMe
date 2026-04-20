@@ -11,10 +11,12 @@ import SwiftUI
 
 // MARK: - Card surface
 
-struct MMCard<Content: View>: View {
-    enum Tone { case surface, primaryTint, secondaryTint, warningTint, errorTint }
+enum MMCardTone {
+    case surface, primaryTint, secondaryTint, warningTint, errorTint
+}
 
-    var tone: Tone = .surface
+struct MMCard<Content: View>: View {
+    var tone: MMCardTone = .surface
     var radius: CGFloat = 20
     var padding: CGFloat = 16
     var shadow: MMShadow? = .sm
@@ -314,7 +316,7 @@ struct MMInlineBanner: View {
     var icon: String
     var title: String
     var subtitle: String?
-    var tone: MMCard.Tone = .secondaryTint
+    var tone: MMCardTone = .secondaryTint
     var iconColor: Color = MMColor.secondary
     var action: (() -> Void)?
 
