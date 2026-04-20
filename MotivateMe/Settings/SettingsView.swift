@@ -17,8 +17,10 @@ struct SettingsView: View {
     @Bindable var profile: UserProfile
 
     @State private var showRegenerateAlert: Bool = false
+    @State private var editingName: Bool = false
 
     // UI-only preferences (see note in file header).
+    @AppStorage("mm.userName") private var userName: String = ""
     @AppStorage("mm.hideStreakNumbers") private var hideStreakNumbers: Bool = false
     @AppStorage("mm.forgivenessWindow") private var forgivenessWindow: Int = 3
     @AppStorage("mm.quietMode") private var quietMode: Bool = false
@@ -55,6 +57,16 @@ struct SettingsView: View {
             actions: regenerateActions,
             message: { Text("Your weekly plan changed. Regenerate workout days to match? Your custom edits will be replaced.") }
         )
+        .sheet(isPresented: $editingName) {
+            NameEditSheet(initial: userName) { newValue in
+                userName = newValue
+                editingName = false
+            } onCancel: {
+                editingName = false
+            }
+            .presentationDetents([.height(260)])
+            .presentationDragIndicator(.visible)
+        }
     }
 
     private var headerCopy: some View {
@@ -68,7 +80,23 @@ struct SettingsView: View {
 
     private var profileSection: some View {
         MMSettingsSection(title: "Profile") {
-            MMSettingsRow(icon: "figure.flexibility", iconBackground: MMColor.primary) {
+            Button {
+                editingName = true
+            } label: {
+                MMSettingsRow(icon: "person.fill", iconBackground: MMColor.primary) {
+                    MMSettingsLabel(title: "Name")
+                    Spacer(minLength: 8)
+                    Text(userName.isEmpty ? "Add" : userName)
+                        .font(MMFont.callout)
+                        .foregroundStyle(MMColor.textTertiary)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(MMColor.textTertiary)
+                }
+            }
+            .buttonStyle(.plain)
+
+            MMSettingsRow(icon: "figure.flexibility", iconBackground: MMColor.secondary) {
                 MMSettingsLabel(title: "Experience", subtitle: profile.experienceLevel.descriptionText)
                 Spacer(minLength: 8)
                 Picker("Experience", selection: $profile.experienceLevel) {
@@ -80,7 +108,10 @@ struct SettingsView: View {
                 .tint(MMColor.primary)
             }
 
-            MMSettingsRow(icon: "scalemass.fill", iconBackground: MMColor.secondary) {
+            MMSettingsRow(
+                icon: "scalemass.fill",
+                iconBackground: Color(.sRGB, red: 0.478, green: 0.647, blue: 0.722, opacity: 1)
+            ) {
                 MMSettingsLabel(title: "Units", subtitle: "Weight & measurements")
                 Spacer(minLength: 8)
                 Picker("Units", selection: $profile.preferredUnit) {
@@ -701,5 +732,72 @@ struct MMSettingsLabel: View {
                     .lineLimit(2)
             }
         }
+    }
+}
+
+// MARK: - Name edit sheet
+
+private struct NameEditSheet: View {
+    let initial: String
+    let onSave: (String) -> Void
+    let onCancel: () -> Void
+
+    @State private var value: String = ""
+    @FocusState private var focused: Bool
+
+    init(initial: String, onSave: @escaping (String) -> Void, onCancel: @escaping () -> Void) {
+        self.initial = initial
+        self.onSave = onSave
+        self.onCancel = onCancel
+        _value = State(initialValue: initial)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Your name")
+                    .font(MMFont.title3)
+                    .foregroundStyle(MMColor.textPrimary)
+                Text("However you'd like to be greeted.")
+                    .font(MMFont.footnote)
+                    .foregroundStyle(MMColor.textSecondary)
+            }
+            .padding(.top, 4)
+
+            TextField("Name", text: $value)
+                .textInputAutocapitalization(.words)
+                .focused($focused)
+                .font(.system(size: 18, weight: .medium, design: .rounded))
+                .foregroundStyle(MMColor.textPrimary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(MMColor.surfaceCard)
+                )
+                .mmShadow(.xs)
+                .submitLabel(.done)
+                .onSubmit { onSave(trimmed) }
+
+            Button {
+                onSave(trimmed)
+            } label: {
+                Text("Save")
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Capsule().fill(MMColor.primary))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 24)
+        .background(MMColor.bg.ignoresSafeArea())
+        .onAppear { focused = true }
+    }
+
+    private var trimmed: String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
