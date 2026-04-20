@@ -14,6 +14,7 @@
 
 import SwiftUI
 import SwiftData
+import Combine
 
 struct ActiveWorkoutView: View {
     @Environment(\.dismiss) private var dismiss
