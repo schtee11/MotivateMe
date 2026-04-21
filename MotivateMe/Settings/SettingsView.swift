@@ -10,11 +10,19 @@
 //
 
 import SwiftUI
+import SwiftData
+import UserNotifications
 
 struct SettingsView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.openURL) private var openURL
+    @Environment(ErrorPresenter.self) private var errorPresenter
     @Bindable var profile: UserProfile
 
     @State private var showRegenerateAlert: Bool = false
+    @State private var showResetAlert: Bool = false
+    @State private var showNotificationsDeniedAlert: Bool = false
+    @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
     @State private var pendingSplit: SplitStyle?
     @State private var pendingDays: Int?
 
@@ -24,15 +32,34 @@ struct SettingsView: View {
                 prefsSection
                 planSection
                 equipmentSection
-                metaSection
+                notificationsSection
+                aboutSection
+                dangerSection
             }
             .navigationTitle("Settings")
+            .task { notificationStatus = await NotificationScheduler.currentStatus() }
             .alert(
                 "Regenerate schedule?",
                 isPresented: $showRegenerateAlert,
                 actions: regenerateActions,
                 message: { Text("Your weekly plan changed. Regenerate workout days to match? Your custom edits will be replaced.") }
             )
+            .alert("Start over?", isPresented: $showResetAlert) {
+                Button("Erase everything", role: .destructive) { resetAllData() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This deletes your profile, workouts, check-ins, and measurements. The app will restart onboarding.")
+            }
+            .alert("Notifications are off", isPresented: $showNotificationsDeniedAlert) {
+                Button("Open Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        openURL(url)
+                    }
+                }
+                Button("Not now", role: .cancel) {}
+            } message: {
+                Text("Enable notifications for MotivateMe in the system Settings app to receive reminders.")
+            }
         }
     }
 
@@ -137,7 +164,50 @@ struct SettingsView: View {
         }
     }
 
-    private var metaSection: some View {
+    // MARK: - Notifications
+
+    private var notificationsSection: some View {
+        Section {
+            Toggle("Daily workout reminder", isOn: Binding(
+                get: { profile.notificationsEnabled },
+                set: { newValue in toggleDailyReminder(newValue) }
+            ))
+            .disabled(notificationStatus == .denied)
+
+            if profile.notificationsEnabled && notificationStatus != .denied {
+                DatePicker(
+                    "Remind me at",
+                    selection: Binding(
+                        get: { profile.reminderTime },
+                        set: { newValue in
+                            profile.reminderTime = newValue
+                            profile.updatedAt = Date()
+                            Task { await NotificationScheduler.sync(profile: profile) }
+                        }
+                    ),
+                    displayedComponents: .hourAndMinute
+                )
+            }
+
+            Toggle("Weekly check-in reminder", isOn: Binding(
+                get: { profile.weeklyCheckinEnabled },
+                set: { newValue in toggleWeeklyCheckin(newValue) }
+            ))
+            .disabled(notificationStatus == .denied)
+        } header: {
+            Text("Notifications")
+        } footer: {
+            if notificationStatus == .denied {
+                Text("Notifications are turned off for MotivateMe in the system Settings app.")
+            } else {
+                Text("We'll nudge you at your reminder time on workout days and once a week for the check-in.")
+            }
+        }
+    }
+
+    // MARK: - About
+
+    private var aboutSection: some View {
         Section {
             HStack {
                 Text("Member since")
@@ -145,9 +215,64 @@ struct SettingsView: View {
                 Text(profile.createdAt.formatted(date: .abbreviated, time: .omitted))
                     .foregroundStyle(.secondary)
             }
+
+            HStack {
+                Text("Version")
+                Spacer()
+                Text(appVersionString)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+
+            Button {
+                sendFeedback()
+            } label: {
+                HStack {
+                    Text("Send feedback")
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "envelope")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Button {
+                openPrivacyPolicy()
+            } label: {
+                HStack {
+                    Text("Privacy policy")
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "arrow.up.right.square")
+                        .foregroundStyle(.secondary)
+                }
+            }
         } header: {
-            Text("Profile")
+            Text("About")
         }
+    }
+
+    // MARK: - Danger zone
+
+    private var dangerSection: some View {
+        Section {
+            Button(role: .destructive) {
+                showResetAlert = true
+            } label: {
+                Text("Start over")
+            }
+        } footer: {
+            Text("Erases your profile and every workout, check-in, and measurement stored on this device.")
+        }
+    }
+
+    // MARK: - Derived
+
+    private var appVersionString: String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "—"
+        let build = info?["CFBundleVersion"] as? String ?? "—"
+        return "\(version) (\(build))"
     }
 
     // MARK: - Actions
@@ -176,5 +301,70 @@ struct SettingsView: View {
             profile.availableEquipment.append(equipment)
         }
         profile.updatedAt = Date()
+    }
+
+    private func toggleDailyReminder(_ newValue: Bool) {
+        handleNotificationToggle(enable: newValue) { status in
+            profile.notificationsEnabled = newValue && status != .denied
+            profile.updatedAt = Date()
+            Task { await NotificationScheduler.sync(profile: profile) }
+        }
+    }
+
+    private func toggleWeeklyCheckin(_ newValue: Bool) {
+        handleNotificationToggle(enable: newValue) { status in
+            profile.weeklyCheckinEnabled = newValue && status != .denied
+            profile.updatedAt = Date()
+            Task { await NotificationScheduler.sync(profile: profile) }
+        }
+    }
+
+    // Turning a notification preference on requires asking the system; if
+    // the user previously denied, surface that so they can flip it in
+    // Settings.app rather than silently leaving the toggle in a dead state.
+    private func handleNotificationToggle(enable: Bool, apply: @escaping (UNAuthorizationStatus) -> Void) {
+        guard enable else {
+            apply(notificationStatus)
+            return
+        }
+        Task {
+            let status = await NotificationScheduler.requestAuthorization()
+            await MainActor.run {
+                notificationStatus = status
+                if status == .denied {
+                    showNotificationsDeniedAlert = true
+                }
+                apply(status)
+            }
+        }
+    }
+
+    // MARK: - URLs / feedback / reset
+
+    private func openPrivacyPolicy() {
+        guard let url = URL(string: "https://williamtrout.com/motivateme/privacy") else { return }
+        openURL(url)
+    }
+
+    private func sendFeedback() {
+        let subject = "MotivateMe feedback (v\(appVersionString))"
+        let encoded = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        guard let url = URL(string: "mailto:feedback@williamtrout.com?subject=\(encoded)") else { return }
+        openURL(url)
+    }
+
+    private func resetAllData() {
+        NotificationScheduler.cancelAll()
+        WorkoutDraftStore.clear()
+        do {
+            try modelContext.delete(model: UserProfile.self)
+            try modelContext.delete(model: Session.self)
+            try modelContext.delete(model: SessionExercise.self)
+            try modelContext.delete(model: DailyCheckin.self)
+            try modelContext.delete(model: BodyMeasurement.self)
+            try modelContext.save()
+        } catch {
+            errorPresenter.present(error, context: "Erasing your data")
+        }
     }
 }

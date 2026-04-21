@@ -25,7 +25,12 @@ struct ContentView: View {
         }
         .environment(errorPresenter)
         .errorAlert(presenter: errorPresenter)
-        .task { ensureSchedule() }
+        .task {
+            ensureSchedule()
+            if let profile = profiles.first {
+                await NotificationScheduler.sync(profile: profile)
+            }
+        }
     }
 
     // Profiles created before the schedule feature shipped have no schedule
