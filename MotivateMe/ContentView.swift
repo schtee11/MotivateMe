@@ -13,6 +13,7 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
+    @State private var errorPresenter = ErrorPresenter()
 
     var body: some View {
         Group {
@@ -22,6 +23,8 @@ struct ContentView: View {
                 MainTabView(profile: profiles[0])
             }
         }
+        .environment(errorPresenter)
+        .errorAlert(presenter: errorPresenter)
         .task { ensureSchedule() }
     }
 
@@ -34,7 +37,11 @@ struct ContentView: View {
             splitStyle: profile.splitStyle,
             daysPerWeek: profile.daysPerWeek
         )
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            errorPresenter.present(error, context: "Setting up your weekly schedule")
+        }
     }
 }
 
