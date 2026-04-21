@@ -18,6 +18,7 @@ struct ActiveWorkoutView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(ErrorPresenter.self) private var errorPresenter
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var draft: WorkoutDraft
     @State private var restTimer = RestTimer()
@@ -67,6 +68,9 @@ struct ActiveWorkoutView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: restTimer.isRunning)
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { restTimer.recompute() }
+            }
             .navigationTitle(draft.template.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
