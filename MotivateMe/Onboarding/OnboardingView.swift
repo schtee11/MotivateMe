@@ -8,6 +8,9 @@
 //  routes away from this view automatically — nothing here needs to call
 //  a dismiss.
 //
+//  Morning Light shell: progress dots up top, a back-chevron pill on the
+//  left, and a pinned peach pill CTA in a soft fading footer.
+//
 
 import SwiftUI
 import SwiftData
@@ -21,58 +24,138 @@ struct OnboardingView: View {
     private let steps: [OnboardingStep] = OnboardingStep.allCases
 
     var body: some View {
-        NavigationStack {
+        ZStack {
+            MMColor.bg.ignoresSafeArea()
+
             VStack(spacing: 0) {
-                ProgressView(value: Double(stepIndex + 1), total: Double(steps.count))
-                    .progressViewStyle(.linear)
-                    .padding(.horizontal)
-                    .padding(.top, 12)
+                topBar
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
 
                 stepContent
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.horizontal)
-                    .padding(.vertical, 16)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .id(stepIndex)
+                    .transition(.opacity)
 
-                navigationBar
-                    .padding(.horizontal)
-                    .padding(.bottom, 16)
+                footerBar
             }
         }
     }
 
-    @ViewBuilder
-    private var stepContent: some View {
-        switch steps[stepIndex] {
-        case .welcome:    WelcomeStep()
-        case .goals:      GoalsStep(draft: draft)
-        case .experience: ExperienceStep(draft: draft)
-        case .equipment:  EquipmentStep(draft: draft)
-        case .schedule:   ScheduleStep(draft: draft)
-        case .units:      UnitsStep(draft: draft)
-        case .summary:    SummaryStep(draft: draft)
-        }
-    }
+    // MARK: - Top: progress dots + back
 
-    private var navigationBar: some View {
-        HStack {
-            if stepIndex > 0 {
-                Button("Back") {
-                    withAnimation { stepIndex -= 1 }
+    private var topBar: some View {
+        HStack(alignment: .center) {
+            Group {
+                if stepIndex > 0 && !isLastStep {
+                    Button {
+                        withAnimation(.spring(response: 0.32, dampingFraction: 0.85)) {
+                            stepIndex -= 1
+                        }
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(MMColor.primary)
+                            .frame(width: 34, height: 34)
+                            .background(
+                                Circle().fill(MMColor.surfaceCard)
+                            )
+                            .mmShadow(.sm)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Color.clear.frame(width: 34, height: 34)
                 }
-                .buttonStyle(.bordered)
             }
 
             Spacer()
 
-            Button(isLastStep ? "Get started" : "Continue") {
-                if isLastStep {
-                    save()
-                } else {
-                    withAnimation { stepIndex += 1 }
+            HStack(spacing: 6) {
+                ForEach(steps.indices, id: \.self) { i in
+                    Capsule(style: .continuous)
+                        .fill(dotColor(at: i))
+                        .frame(width: i == stepIndex ? 20 : 6, height: 6)
+                        .animation(.spring(response: 0.32, dampingFraction: 0.85), value: stepIndex)
                 }
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(!canAdvance)
+
+            Spacer()
+
+            Color.clear.frame(width: 34, height: 34)
+        }
+        .frame(height: 44)
+    }
+
+    private func dotColor(at index: Int) -> Color {
+        if index == stepIndex { return MMColor.primary }
+        if index <  stepIndex { return MMColor.primaryMuted }
+        return MMColor.border
+    }
+
+    // MARK: - Step content
+
+    @ViewBuilder
+    private var stepContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                switch steps[stepIndex] {
+                case .welcome:    WelcomeStep()
+                case .goals:      GoalsStep(draft: draft)
+                case .experience: ExperienceStep(draft: draft)
+                case .equipment:  EquipmentStep(draft: draft)
+                case .schedule:   ScheduleStep(draft: draft)
+                case .units:      UnitsStep(draft: draft)
+                case .summary:    SummaryStep(draft: draft)
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 12)
+            .padding(.bottom, 24)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .scrollContentBackground(.hidden)
+    }
+
+    // MARK: - Footer
+
+    private var footerBar: some View {
+        VStack(spacing: 10) {
+            MMPillButton(
+                variant: .primary,
+                title: continueLabel
+            ) {
+                advance()
+            }
+            .opacity(canAdvance ? 1 : 0.5)
+            .allowsHitTesting(canAdvance)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 24)
+        .background(
+            LinearGradient(
+                colors: [MMColor.bg.opacity(0), MMColor.bg],
+                startPoint: .top, endPoint: .bottom
+            )
+            .ignoresSafeArea(edges: .bottom)
+        )
+    }
+
+    private var continueLabel: String {
+        switch steps[stepIndex] {
+        case .welcome: return "Let's begin"
+        case .summary: return "Get started"
+        default:       return "Continue"
+        }
+    }
+
+    private func advance() {
+        if isLastStep {
+            save()
+        } else {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.85)) {
+                stepIndex += 1
+            }
         }
     }
 

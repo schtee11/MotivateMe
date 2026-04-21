@@ -2,13 +2,10 @@
 //  TodayView.swift
 //  MotivateMe
 //
-//  Post-onboarding landing screen. Reads the user's weekly schedule,
-//  looks up today's category, and recommends a matching template from
-//  the library. Renders one of four states:
-//  - Session already logged today → completed card (no Start button)
-//  - Rest day → rest card
-//  - Workout day with matching template → workout card with Start
-//  - Workout day, no matching template → no-match card
+//  Post-onboarding landing screen, dressed in the "Morning Light" design.
+//  Reads the user's weekly schedule, looks up today's category, and
+//  recommends a matching template from the library. Renders one of four
+//  states: completed, rest day, workout day with template, or no-match.
 //
 
 import SwiftUI
@@ -18,12 +15,15 @@ struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ErrorPresenter.self) private var errorPresenter
     @Bindable var profile: UserProfile
+
     @State private var activeWorkoutTemplate: WorkoutTemplate?
     @State private var resumeSnapshot: WorkoutDraftSnapshot?
     @State private var showingResumePrompt: Bool = false
     @State private var showingPicker: Bool = false
     @State private var showingLighterPicker: Bool = false
     @State private var showingCheckin: Bool = false
+
+    @AppStorage("mm.userName") private var userName: String = ""
 
     @Query(sort: \Session.date, order: .reverse) private var allSessions: [Session]
     @Query(sort: \DailyCheckin.date, order: .reverse) private var allCheckins: [DailyCheckin]
@@ -39,17 +39,11 @@ struct TodayView: View {
         return TemplateRecommender.recommend(category: category, for: profile)
     }
 
-    // Treat any saved session whose date falls on today as "done for today".
-    // Checking the first (most recent) is enough because the query is sorted.
     private var todaysSession: Session? {
         let calendar = Calendar.current
-        return allSessions.first { session in
-            calendar.isDate(session.date, inSameDayAs: Date())
-        }
+        return allSessions.first { calendar.isDate($0.date, inSameDayAs: Date()) }
     }
 
-    // Most recent session logged for this template, excluding today's in-progress
-    // one. Used to pre-fill weights so users don't have to re-enter them.
     private func lastSession(for template: WorkoutTemplate) -> Session? {
         let calendar = Calendar.current
         return allSessions.first { session in
@@ -63,29 +57,82 @@ struct TodayView: View {
         return allCheckins.first { calendar.isDate($0.date, inSameDayAs: Date()) }
     }
 
-    private var todaysReadiness: Int? {
-        todaysCheckin?.readinessScore
+    private var todaysReadiness: Int? { todaysCheckin?.readinessScore }
+
+    private var currentStreak: Int {
+        StreakCalculator.currentStreak(sessions: allSessions, profile: profile)
+    }
+
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        let base: String
+        switch hour {
+        case ..<12: base = "Good morning"
+        case ..<18: base = "Good afternoon"
+        default:    base = "Good evening"
+        }
+        let trimmed = userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? base : "\(base), \(trimmed)"
+    }
+
+    private var userInitials: String? {
+        let trimmed = userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let parts = trimmed.split(separator: " ").prefix(2)
+        let letters = parts.compactMap(\.first).map(String.init).joined()
+        return letters.isEmpty ? nil : letters.uppercased()
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    dateHeader
+                VStack(alignment: .leading, spacing: 18) {
+                    header
                     checkinBanner
-                    todayCard
-                    weekStrip
-                }
-                .padding()
-            }
-            .navigationTitle("Today")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        EditScheduleView(profile: profile)
-                    } label: {
-                        Image(systemName: "calendar")
+                    if currentStreak > 0 {
+                        StreakHero(days: currentStreak, message: streakMessage(currentStreak))
                     }
+                    todaysFocusSection
+                    weeklyRhythmCard
+                    encouragementCard
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 32)
+            }
+            .scrollContentBackground(.hidden)
+            .background(MMColor.bg.ignoresSafeArea())
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink {
+                        SettingsView(profile: profile)
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .fill(MMColor.secondaryMuted)
+                                .frame(width: 34, height: 34)
+                            if let initials = userInitials {
+                                Text(initials)
+                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(MMColor.secondary)
+                            } else {
+                                Image(systemName: "person.fill")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(MMColor.secondary)
+                            }
+                        }
+                    }
+                    .accessibilityLabel("Settings")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingCheckin = true
+                    } label: {
+                        Image(systemName: "bell")
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundStyle(MMColor.textSecondary)
+                    }
+                    .accessibilityLabel("Check-in")
                 }
             }
             .fullScreenCover(item: $activeWorkoutTemplate) { template in
@@ -131,175 +178,74 @@ struct TodayView: View {
         }
     }
 
-    private func checkForResumableWorkout() {
-        guard activeWorkoutTemplate == nil, resumeSnapshot == nil else { return }
-        guard let snapshot = WorkoutDraftStore.load() else { return }
-        resumeSnapshot = snapshot
-        showingResumePrompt = true
+    // MARK: - Header
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(Date().formatted(.dateTime.weekday(.wide).month().day()))
+                .font(MMFont.footnote)
+                .foregroundStyle(MMColor.textSecondary)
+            Text(greeting)
+                .font(MMFont.largeTitle)
+                .foregroundStyle(MMColor.textPrimary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 4)
     }
+
+    // MARK: - Check-in banner
+
 
     @ViewBuilder
     private var checkinBanner: some View {
         if let score = todaysReadiness {
-            Button { showingCheckin = true } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "sun.max")
-                        .foregroundStyle(.secondary)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Readiness \(score)/10")
-                            .font(.footnote).bold()
-                            .foregroundStyle(.primary)
-                        Text("Tap to update")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.secondary.opacity(0.08))
-                )
-            }
-            .buttonStyle(.plain)
+            MMInlineBanner(
+                icon: "sun.max.fill",
+                title: "Readiness \(score) of 10",
+                subtitle: "We tuned today to match",
+                tone: .secondaryTint,
+                iconColor: MMColor.secondary,
+                action: { showingCheckin = true }
+            )
         } else {
-            Button { showingCheckin = true } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "sun.max.fill")
-                        .foregroundStyle(Color.accentColor)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("How are you feeling today?")
-                            .font(.footnote).bold()
-                            .foregroundStyle(.primary)
-                        Text("Quick morning check-in")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.accentColor.opacity(0.1))
-                )
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private var weekStrip: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .lastTextBaseline) {
-                Text("This week")
-                    .font(.headline)
-                Text(weekSummaryText)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                NavigationLink("Edit") {
-                    EditScheduleView(profile: profile)
-                }
-                .font(.footnote)
-            }
-
-            HStack(spacing: 6) {
-                ForEach(Weekday.allCases, id: \.self) { weekday in
-                    weekdayPill(weekday)
-                }
-            }
-        }
-    }
-
-    // Count of scheduled workout days (non-rest entries) and sessions logged
-    // within the current calendar week. "Workout" here excludes pure rest-day
-    // logs since they don't count toward the planned-workout tally.
-    private var weekSummaryText: String {
-        let planned = profile.weeklySchedule.filter { $0.templateCategory != nil }.count
-        let calendar = Calendar.current
-        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: Date()) else {
-            return ""
-        }
-        let done = allSessions.filter { session in
-            guard session.status != .restDayLogged else { return false }
-            return weekInterval.contains(session.date)
-        }.count
-        return planned == 0 ? "" : "· \(done) of \(planned) done"
-    }
-
-    private func weekdayPill(_ weekday: Weekday) -> some View {
-        let entry = profile.weeklySchedule.first { $0.weekday == weekday }
-        let isToday = weekday == todayWeekday
-        let category = entry?.templateCategory
-        let letter = category?.displayName.prefix(1).uppercased() ?? "·"
-
-        return VStack(spacing: 4) {
-            Text(weekday.shortName.prefix(1))
-                .font(.caption2).bold()
-                .foregroundStyle(.secondary)
-            Text(letter)
-                .font(.caption).bold()
-                .frame(width: 28, height: 28)
-                .background(
-                    Circle().fill(
-                        category == nil
-                            ? Color.secondary.opacity(0.15)
-                            : Color.accentColor.opacity(0.2)
-                    )
-                )
-                .foregroundStyle(category == nil ? .secondary : .primary)
-                .overlay(
-                    Circle().stroke(
-                        isToday ? Color.accentColor : .clear,
-                        lineWidth: 2
-                    )
-                )
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var dateHeader: some View {
-        HStack {
-            Text(Date().formatted(.dateTime.weekday(.wide).month().day()))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-            streakPill
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    @ViewBuilder
-    private var streakPill: some View {
-        let streak = StreakCalculator.currentStreak(sessions: allSessions, profile: profile)
-        if streak > 0 {
-            HStack(spacing: 4) {
-                Image(systemName: "flame.fill")
-                    .foregroundStyle(.orange)
-                Text("\(streak)")
-                    .font(.subheadline).bold()
-                    .monospacedDigit()
-                Text(streak == 1 ? "day" : "days")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(
-                Capsule().fill(Color.orange.opacity(0.12))
+            MMInlineBanner(
+                icon: "sun.max",
+                title: "How are you today?",
+                subtitle: "A quick morning check-in · under a minute",
+                tone: .primaryTint,
+                iconColor: MMColor.primary,
+                action: { showingCheckin = true }
             )
         }
     }
 
+    // MARK: - Today's focus (workout / rest / completed)
+
+    private var todaysFocusSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Today's focus")
+                    .font(MMFont.title3)
+                    .foregroundStyle(MMColor.textPrimary)
+                Spacer()
+                Text(focusEyebrow)
+                    .font(MMFont.footnote)
+                    .foregroundStyle(MMColor.textSecondary)
+            }
+            .padding(.horizontal, 4)
+
+            focusCard
+        }
+    }
+
+    private var focusEyebrow: String {
+        if todaysSession != nil { return "Done" }
+        if let category = todayEntry?.templateCategory { return category.displayName }
+        return "Rest day"
+    }
+
     @ViewBuilder
-    private var todayCard: some View {
+    private var focusCard: some View {
         if let session = todaysSession {
             completedCard(session: session)
         } else if let category = todayEntry?.templateCategory {
@@ -318,45 +264,34 @@ struct TodayView: View {
         let completedCount = allSets.filter(\.completed).count
         let total = allSets.count
 
-        return VStack(alignment: .leading, spacing: 8) {
-            Text("DONE FOR TODAY")
-                .font(.caption).bold()
-                .foregroundStyle(.secondary)
-            Text(completedTitle(status: session.status))
-                .font(.title2).bold()
-            Text(subtitle(status: session.status, completed: completedCount, total: total))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        return MMCard(tone: .secondaryTint, radius: 28, padding: 20) {
+            VStack(alignment: .leading, spacing: 10) {
+                MMEyebrow(text: "Done for today", color: MMColor.secondary)
+                Text(completedTitle(status: session.status))
+                    .font(MMFont.title1)
+                    .foregroundStyle(MMColor.textPrimary)
+                Text(subtitle(status: session.status, completed: completedCount, total: total))
+                    .font(MMFont.subhead)
+                    .foregroundStyle(MMColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            HStack(spacing: 8) {
-                if let template = recommendedTemplate {
-                    Button {
-                        activeWorkoutTemplate = template
-                    } label: {
-                        Label("Start another", systemImage: "plus.circle")
-                            .font(.footnote)
+                HStack(spacing: 8) {
+                    if let template = recommendedTemplate {
+                        MMPillButton(
+                            variant: .secondary, size: .sm,
+                            icon: "plus", fullWidth: false,
+                            title: "Start another"
+                        ) { activeWorkoutTemplate = template }
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
+                    MMPillButton(
+                        variant: .ghost, size: .sm,
+                        icon: "list.bullet", fullWidth: false,
+                        title: "Pick one"
+                    ) { showingPicker = true }
                 }
-
-                Button {
-                    showingPicker = true
-                } label: {
-                    Label("Pick a workout", systemImage: "list.bullet")
-                        .font(.footnote)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .padding(.top, 4)
             }
-            .padding(.top, 4)
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.accentColor.opacity(0.12))
-        )
     }
 
     private func completedTitle(status: SessionStatus) -> String {
@@ -381,151 +316,242 @@ struct TodayView: View {
     private func workoutCard(template: WorkoutTemplate, category: TemplateCategory) -> some View {
         let isLowReadiness = (todaysReadiness ?? 7) <= 4
 
-        return VStack(alignment: .leading, spacing: 12) {
-            Text(category.displayName.uppercased())
-                .font(.caption).bold()
-                .foregroundStyle(.secondary)
+        return MMCard(tone: .surface, radius: 28, padding: 22, shadow: .md) {
+            ZStack(alignment: .topTrailing) {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [MMColor.primary.opacity(0.18), .clear],
+                            center: .center, startRadius: 4, endRadius: 110
+                        )
+                    )
+                    .frame(width: 170, height: 170)
+                    .offset(x: 60, y: -70)
+                    .allowsHitTesting(false)
 
-            Text(template.name)
-                .font(.title).bold()
+                VStack(alignment: .leading, spacing: 10) {
+                    MMEyebrow(text: category.displayName)
 
-            if isLowReadiness {
-                HStack(spacing: 8) {
-                    Image(systemName: "leaf")
-                        .foregroundStyle(.orange)
-                    Text("Feeling wiped today? Take it easy.")
-                        .font(.footnote)
-                        .foregroundStyle(.primary)
+                    Text(template.name)
+                        .font(MMFont.title1)
+                        .foregroundStyle(MMColor.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if isLowReadiness {
+                        HStack(spacing: 8) {
+                            Image(systemName: "leaf.fill")
+                                .foregroundStyle(MMColor.secondary)
+                            Text("Feeling wiped today? Take it easy.")
+                                .font(MMFont.footnote)
+                                .foregroundStyle(MMColor.textPrimary)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 9)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(MMColor.secondaryTint)
+                        )
+                    } else if let summary = template.summary {
+                        Text(summary)
+                            .font(MMFont.subhead)
+                            .foregroundStyle(MMColor.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    HStack(spacing: 18) {
+                        Label("\(template.targetDurationMinutes) min", systemImage: "clock")
+                        Label("\(template.exerciseSlots.count) exercises", systemImage: "list.bullet")
+                    }
+                    .font(MMFont.footnote)
+                    .foregroundStyle(MMColor.textSecondary)
+
+                    MMPillButton(
+                        variant: .primary,
+                        icon: "play.fill",
+                        title: isLowReadiness ? "Start anyway" : "Start session"
+                    ) {
+                        activeWorkoutTemplate = template
+                    }
+                    .padding(.top, 6)
+
+                    if isLowReadiness {
+                        MMPillButton(
+                            variant: .secondary, size: .md,
+                            icon: "leaf",
+                            title: "Try a lighter option"
+                        ) { showingLighterPicker = true }
+                    }
+
+                    MMPillButton(
+                        variant: .ghost, size: .md,
+                        icon: "arrow.left.arrow.right",
+                        title: "Swap workout"
+                    ) { showingPicker = true }
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.orange.opacity(0.12))
-                )
-            } else if let summary = template.summary {
-                Text(summary)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
             }
-
-            HStack(spacing: 16) {
-                Label("\(template.targetDurationMinutes) min", systemImage: "clock")
-                Label("\(template.exerciseSlots.count) exercises", systemImage: "list.bullet")
-            }
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-
-            Button {
-                activeWorkoutTemplate = template
-            } label: {
-                Text(isLowReadiness ? "Start anyway" : "Start workout")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .padding(.top, 4)
-
-            if isLowReadiness {
-                Button {
-                    showingLighterPicker = true
-                } label: {
-                    Label("Try a lighter option", systemImage: "leaf")
-                        .font(.footnote)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-            }
-
-            Button {
-                showingPicker = true
-            } label: {
-                Label("Swap workout", systemImage: "arrow.left.arrow.right")
-                    .font(.footnote)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.secondary.opacity(0.08))
-        )
     }
 
     private func noMatchCard(category: TemplateCategory) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(category.displayName.uppercased())
-                .font(.caption).bold()
-                .foregroundStyle(.secondary)
-            Text("No matching workout")
-                .font(.title2).bold()
-            Text("We couldn't find a \(category.displayName.lowercased()) template that fits your equipment. Update your equipment list or adjust the schedule.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        MMCard(tone: .surface, radius: 28, padding: 22, shadow: .sm) {
+            VStack(alignment: .leading, spacing: 10) {
+                MMEyebrow(text: category.displayName)
+                Text("No matching workout")
+                    .font(MMFont.title1)
+                    .foregroundStyle(MMColor.textPrimary)
+                Text("We couldn't find a \(category.displayName.lowercased()) template that fits your equipment. Update equipment in Settings or pick something else.")
+                    .font(MMFont.subhead)
+                    .foregroundStyle(MMColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            Button {
-                showingPicker = true
-            } label: {
-                Label("Pick a workout", systemImage: "list.bullet")
-                    .frame(maxWidth: .infinity)
+                MMPillButton(
+                    variant: .primary,
+                    icon: "list.bullet",
+                    title: "Pick a workout"
+                ) { showingPicker = true }
+                .padding(.top, 6)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .padding(.top, 4)
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.secondary.opacity(0.08))
-        )
     }
 
     private var restDayCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("REST DAY")
-                .font(.caption).bold()
-                .foregroundStyle(.secondary)
-            Text("Take it easy today")
-                .font(.title2).bold()
-            Text("Rest is when your body adapts. Hydrate, sleep well, maybe a walk.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        MMCard(tone: .secondaryTint, radius: 28, padding: 22, shadow: .sm) {
+            VStack(alignment: .leading, spacing: 10) {
+                MMEyebrow(text: "Rest day", color: MMColor.secondary)
+                Text("Take it easy today")
+                    .font(MMFont.title1)
+                    .foregroundStyle(MMColor.textPrimary)
+                Text("Rest is when the body adapts. Hydrate, sleep well, maybe a walk.")
+                    .font(MMFont.subhead)
+                    .foregroundStyle(MMColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            Button {
-                logRestDay()
-            } label: {
-                Label("Log rest day", systemImage: "moon.zzz")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .padding(.top, 4)
+                MMPillButton(
+                    variant: .primary,
+                    icon: "moon.zzz.fill",
+                    title: "Log rest day"
+                ) { logRestDay() }
+                .padding(.top, 6)
 
-            Button {
-                showingPicker = true
-            } label: {
-                Label("Pick a workout anyway", systemImage: "list.bullet")
-                    .font(.footnote)
+                MMPillButton(
+                    variant: .ghost, size: .md,
+                    icon: "list.bullet",
+                    title: "Pick a workout anyway"
+                ) { showingPicker = true }
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.secondary.opacity(0.08))
+    }
+
+    // MARK: - Streak message
+
+    private func streakMessage(_ days: Int) -> String {
+        switch days {
+        case 1:    return "One day in. The hardest one is behind you."
+        case 2...4:  return "You've shown up \(days) days in a row. Keep going gently."
+        case 5...13: return "\(days) days strong. Trust the rhythm."
+        default:    return "\(days) days. Proud of you."
+        }
+    }
+
+    // MARK: - Weekly rhythm card
+
+    private var weeklyRhythmCard: some View {
+        MMCard(tone: .surface, radius: 22, padding: 18, shadow: .sm) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("This week")
+                        .font(MMFont.headline)
+                        .foregroundStyle(MMColor.textPrimary)
+                    if !weekSummaryText.isEmpty {
+                        Text(weekSummaryText)
+                            .font(MMFont.footnote)
+                            .foregroundStyle(MMColor.textSecondary)
+                    }
+                    Spacer()
+                    NavigationLink {
+                        EditScheduleView(profile: profile)
+                    } label: {
+                        Text("Edit")
+                            .font(MMFont.footnote)
+                            .foregroundStyle(MMColor.primary)
+                    }
+                }
+
+                HStack(spacing: 6) {
+                    ForEach(Weekday.allCases, id: \.self) { weekday in
+                        weekdayPill(weekday)
+                    }
+                }
+            }
+        }
+    }
+
+    private var weekSummaryText: String {
+        let planned = profile.weeklySchedule.filter { $0.templateCategory != nil }.count
+        let calendar = Calendar.current
+        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: Date()) else {
+            return ""
+        }
+        let done = allSessions.filter { session in
+            guard session.status != .restDayLogged else { return false }
+            return weekInterval.contains(session.date)
+        }.count
+        return planned == 0 ? "" : "· \(done) of \(planned) done"
+    }
+
+    private func weekdayPill(_ weekday: Weekday) -> some View {
+        let entry = profile.weeklySchedule.first { $0.weekday == weekday }
+        let isToday = weekday == todayWeekday
+        let category = entry?.templateCategory
+        let letter = category?.displayName.prefix(1).uppercased() ?? "·"
+
+        return VStack(spacing: 4) {
+            Text(weekday.shortName.prefix(1))
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(MMColor.textTertiary)
+            Text(letter)
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .frame(width: 30, height: 30)
+                .background(
+                    Circle().fill(
+                        category == nil
+                            ? MMColor.surfaceInput
+                            : MMColor.primaryMuted
+                    )
+                )
+                .foregroundStyle(category == nil ? MMColor.textTertiary : MMColor.primary)
+                .overlay(
+                    Circle().strokeBorder(isToday ? MMColor.primary : .clear, lineWidth: 2)
+                )
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Encouragement quote
+
+    private var encouragementCard: some View {
+        MMQuoteCard(
+            quote: encouragementQuote,
+            attribution: "Weekly reflection · Sunday"
         )
     }
 
-    // Create a zero-exercise Session marking that the user consciously took the
-    // day off. Shows up in History and keeps streak logic (future) honest.
+    private var encouragementQuote: String {
+        // Rotate gently — same quote shows for the day so it doesn't flicker.
+        let lines = [
+            "Small, steady beats loud and sporadic.",
+            "You don't have to feel like it. You just have to start.",
+            "Rest is part of training, not a break from it.",
+            "Showing up is most of it.",
+            "Progress is quiet. Trust the rhythm.",
+        ]
+        let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 0
+        return lines[dayOfYear % lines.count]
+    }
+
+    // MARK: - Actions
+
     private func logRestDay() {
         let session = Session()
         session.date = Date()
@@ -537,5 +563,12 @@ struct TodayView: View {
         } catch {
             errorPresenter.present(error, context: "Logging your rest day")
         }
+    }
+
+    private func checkForResumableWorkout() {
+        guard activeWorkoutTemplate == nil, resumeSnapshot == nil else { return }
+        guard let snapshot = WorkoutDraftStore.load() else { return }
+        resumeSnapshot = snapshot
+        showingResumePrompt = true
     }
 }

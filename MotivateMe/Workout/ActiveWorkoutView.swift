@@ -2,17 +2,19 @@
 //  ActiveWorkoutView.swift
 //  MotivateMe
 //
-//  Full-screen workout logger. Presented as a cover from Today when the
-//  user taps Start. Builds a WorkoutDraft from the template, scrolls
-//  through each exercise's sets, and either saves a Session on Finish or
-//  discards on Cancel.
+//  Full-screen workout logger ("logger" in the Morning Light design).
+//  Builds a WorkoutDraft from the template, scrolls through each
+//  exercise's sets, and either saves a Session on Finish or discards on
+//  Cancel.
 //
-//  Weight input is a TextField with a decimal pad; rep/duration input is
-//  a stepper so you never leave the touch surface during a set.
+//  Each set lives on a row with a grid of: set number · stepper ·
+//  weight field · done circle. A rest pill drops in from the bottom
+//  whenever a set is marked complete.
 //
 
 import SwiftUI
 import SwiftData
+import Combine
 
 struct ActiveWorkoutView: View {
     @Environment(\.dismiss) private var dismiss
@@ -24,8 +26,11 @@ struct ActiveWorkoutView: View {
     @State private var restTimer = RestTimer()
     @State private var showingDiscardConfirmation: Bool = false
     @State private var showingFinishSheet: Bool = false
+    @State private var elapsed: Int = 0
     let profile: UserProfile
     let previousSession: Session?
+
+    private let elapsedTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     init(
         template: WorkoutTemplate,
@@ -42,16 +47,19 @@ struct ActiveWorkoutView: View {
     }
 
     var body: some View {
-        // Inline @Bindable shadow: @State owns the @Observable instance,
-        // but property-level bindings ($draft.exerciseDrafts[i]) only
-        // project through a @Bindable reference.
         @Bindable var draft = draft
 
         return NavigationStack {
             ZStack(alignment: .bottom) {
+                MMColor.bg.ignoresSafeArea()
+
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 18) {
                         header
+                        progressBar
+                        if draft.exerciseDrafts.count > 1 {
+                            exerciseChipStrip
+                        }
 
                         ForEach(draft.exerciseDrafts.indices, id: \.self) { index in
                             ExerciseCard(
@@ -62,39 +70,61 @@ struct ActiveWorkoutView: View {
                             )
                         }
 
-                        finishButton
-                            .padding(.top, 8)
+                        MMPillButton(
+                            variant: .primary,
+                            icon: "checkmark",
+                            title: "Finish workout"
+                        ) { showingFinishSheet = true }
+                        .padding(.top, 6)
                     }
-                    .padding()
-                    .padding(.bottom, restTimer.isRunning ? 72 : 0)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 6)
+                    .padding(.bottom, restTimer.isRunning ? 96 : 32)
                 }
 
                 if restTimer.isRunning {
-                    RestTimerPill(timer: restTimer)
-                        .padding(.bottom, 12)
+                    RestBar(timer: restTimer)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .animation(.easeInOut(duration: 0.2), value: restTimer.isRunning)
+            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: restTimer.isRunning)
             .onChange(of: scenePhase) { _, phase in
                 switch phase {
                 case .active:
                     restTimer.recompute()
                 case .inactive, .background:
-                    // Leaving the app — snapshot so a kill or memory eviction
-                    // doesn't lose what the user has logged so far.
                     WorkoutDraftStore.save(draft.snapshot)
                 @unknown default:
                     break
                 }
             }
-            .navigationTitle(draft.template.name)
             .navigationBarTitleDisplayMode(.inline)
+            .onReceive(elapsedTimer) { _ in
+                elapsed = Int(Date().timeIntervalSince(draft.startedAt))
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") {
+                    Button {
                         showingDiscardConfirmation = true
+                    } label: {
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(MMColor.textSecondary)
+                            .frame(width: 32, height: 32)
+                            .background(Circle().fill(MMColor.surfaceInput))
                     }
+                    .accessibilityLabel("Close workout")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Text(formatElapsed(elapsed))
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(MMColor.primary)
+                        .monospacedDigit()
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Capsule().fill(MMColor.primaryTint))
                 }
             }
             .confirmationDialog(
@@ -126,25 +156,95 @@ struct ActiveWorkoutView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
-            if let summary = draft.template.summary {
-                Text(summary)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            MMEyebrow(text: "Active session", color: MMColor.primary)
+            Text(draft.template.name)
+                .font(MMFont.title1)
+                .foregroundStyle(MMColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 12) {
+                Label("\(draft.template.targetDurationMinutes) min", systemImage: "clock")
+                Label("\(draft.template.exerciseSlots.count) exercises", systemImage: "list.bullet")
             }
-            Text("\(draft.template.targetDurationMinutes) min · \(draft.template.exerciseSlots.count) exercises")
-                .font(.footnote)
-                .foregroundStyle(.tertiary)
+            .font(MMFont.footnote)
+            .foregroundStyle(MMColor.textTertiary)
 
             if let lastTimeText {
-                HStack(spacing: 4) {
-                    Image(systemName: "clock.arrow.circlepath")
-                    Text(lastTimeText)
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.top, 2)
+                Label(lastTimeText, systemImage: "clock.arrow.circlepath")
+                    .font(MMFont.caption1)
+                    .foregroundStyle(MMColor.textSecondary)
+                    .padding(.top, 2)
             }
         }
+        .padding(.bottom, 2)
+    }
+
+    private var progressBar: some View {
+        let totalSets = draft.exerciseDrafts.reduce(0) { $0 + $1.sets.count }
+        let doneSets = draft.exerciseDrafts.reduce(0) { $0 + $1.sets.filter(\.completed).count }
+        let progress = totalSets > 0 ? Double(doneSets) / Double(totalSets) : 0
+        let percent = Int((progress * 100).rounded())
+
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("\(doneSets) of \(totalSets) sets")
+                    .font(MMFont.caption1.weight(.semibold))
+                    .foregroundStyle(MMColor.textSecondary)
+                Spacer()
+                Text("\(percent)%")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(MMColor.primary)
+                    .monospacedDigit()
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(MMColor.surfaceInput)
+                        .frame(height: 8)
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [MMColor.primary, MMColor.primaryHover],
+                                startPoint: .leading, endPoint: .trailing
+                            )
+                        )
+                        .frame(width: max(0, geo.size.width * CGFloat(progress)), height: 8)
+                }
+            }
+            .frame(height: 8)
+        }
+    }
+
+    private var exerciseChipStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Array(draft.exerciseDrafts.enumerated()), id: \.offset) { index, item in
+                    let isDone = item.sets.allSatisfy(\.completed) && !item.sets.isEmpty
+                    let isActive = !isDone && firstUnfinishedIndex == index
+                    ExerciseChip(
+                        number: index + 1,
+                        title: chipName(item),
+                        state: isDone ? .done : (isActive ? .active : .upcoming)
+                    )
+                }
+            }
+            .padding(.horizontal, 2)
+        }
+    }
+
+    private var firstUnfinishedIndex: Int {
+        draft.exerciseDrafts.firstIndex { !$0.sets.allSatisfy(\.completed) || $0.sets.isEmpty } ?? 0
+    }
+
+    private func chipName(_ item: ExerciseDraft) -> String {
+        let name = item.exercise?.name ?? "Exercise"
+        if name.count <= 14 { return name }
+        return String(name.prefix(13)) + "…"
+    }
+
+    private func formatElapsed(_ s: Int) -> String {
+        let m = s / 60
+        let r = s % 60
+        return String(format: "%d:%02d", m, r)
     }
 
     private var lastTimeText: String? {
@@ -176,16 +276,76 @@ struct ActiveWorkoutView: View {
         let today = calendar.startOfDay(for: Date())
         return calendar.dateComponents([.day], from: start, to: today).day ?? 0
     }
+}
 
-    private var finishButton: some View {
-        Button {
-            showingFinishSheet = true
-        } label: {
-            Text("Finish workout")
-                .frame(maxWidth: .infinity)
+// MARK: - Exercise chip (top strip)
+
+private struct ExerciseChip: View {
+    enum State { case active, done, upcoming }
+    let number: Int
+    let title: String
+    let state: State
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .fill(numberBg)
+                    .frame(width: 22, height: 22)
+                if state == .done {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(MMColor.onPrimary)
+                } else {
+                    Text("\(number)")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(numberFg)
+                }
+            }
+            Text(title)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(textColor)
+                .lineLimit(1)
         }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(
+            Capsule(style: .continuous)
+                .fill(chipBg)
+        )
+        .overlay(
+            Capsule(style: .continuous)
+                .strokeBorder(state == .active ? MMColor.primary : .clear, lineWidth: 1.5)
+        )
+    }
+
+    private var chipBg: Color {
+        switch state {
+        case .active:   return MMColor.primaryTint
+        case .done:     return MMColor.secondaryTint
+        case .upcoming: return MMColor.surfaceInput
+        }
+    }
+    private var textColor: Color {
+        switch state {
+        case .active:   return MMColor.primary
+        case .done:     return MMColor.secondary
+        case .upcoming: return MMColor.textSecondary
+        }
+    }
+    private var numberBg: Color {
+        switch state {
+        case .active:   return MMColor.primary
+        case .done:     return MMColor.secondary
+        case .upcoming: return MMColor.surfaceCard
+        }
+    }
+    private var numberFg: Color {
+        switch state {
+        case .active:   return MMColor.onPrimary
+        case .done:     return MMColor.onPrimary
+        case .upcoming: return MMColor.textSecondary
+        }
     }
 }
 
@@ -201,93 +361,53 @@ private struct ExerciseCard: View {
     @State private var showingExerciseHistory: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top) {
-                Button {
-                    showingExerciseHistory = true
-                } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 4) {
-                            Text(draft.exercise?.name ?? "Exercise")
-                                .font(.headline)
-                                .foregroundStyle(.primary)
-                            Image(systemName: "chevron.right")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
+        MMCard(tone: .surface, radius: 20, padding: 16, shadow: .sm) {
+            VStack(alignment: .leading, spacing: 14) {
+                header
+
+                if !draft.skipped {
+                    if let cues = draft.exercise?.formCues, !cues.isEmpty {
+                        Text(cues.joined(separator: " · "))
+                            .font(MMFont.caption1)
+                            .foregroundStyle(MMColor.textTertiary)
+                    }
+
+                    VStack(spacing: 8) {
+                        ForEach(draft.sets.indices, id: \.self) { setIndex in
+                            SetRow(
+                                set: $draft.sets[setIndex],
+                                targetType: draft.slot.targetType,
+                                weightUnit: weightUnit,
+                                restSeconds: draft.slot.restSeconds,
+                                restTimer: restTimer,
+                                canRemove: setIndex >= draft.slot.sets,
+                                onRemove: { draft.removeSet(id: draft.sets[setIndex].id) }
+                            )
                         }
-                        Text(draft.targetDescription)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .buttonStyle(.plain)
-                Spacer()
-                Menu {
-                    Button {
-                        showingExercisePicker = true
-                    } label: {
-                        Label("Swap exercise", systemImage: "arrow.left.arrow.right")
-                    }
-                    Button(role: draft.skipped ? nil : .destructive) {
-                        draft.skipped.toggle()
-                    } label: {
-                        Label(
-                            draft.skipped ? "Unskip" : "Skip exercise",
-                            systemImage: draft.skipped ? "arrow.uturn.backward" : "xmark"
-                        )
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-                }
-                .menuStyle(.borderlessButton)
-            }
 
-            if !draft.skipped {
-                if let cues = draft.exercise?.formCues, !cues.isEmpty {
-                    Text(cues.joined(separator: " · "))
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-
-                VStack(spacing: 6) {
-                    ForEach(draft.sets.indices, id: \.self) { setIndex in
-                        SetRow(
-                            set: $draft.sets[setIndex],
-                            targetType: draft.slot.targetType,
-                            weightUnit: weightUnit,
-                            restSeconds: draft.slot.restSeconds,
-                            restTimer: restTimer,
-                            canRemove: setIndex >= draft.slot.sets,
-                            onRemove: { draft.removeSet(id: draft.sets[setIndex].id) }
-                        )
-                    }
-
-                    Button {
-                        draft.addSet()
-                    } label: {
-                        Label("Add set", systemImage: "plus.circle")
-                            .font(.footnote)
+                        Button {
+                            draft.addSet()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "plus.circle")
+                                Text("Add set")
+                            }
+                            .font(MMFont.footnote)
+                            .foregroundStyle(MMColor.primary)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 2)
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 4)
-                }
 
-                if draft.hasAnyCompletedSet {
-                    effortStrip
-                        .padding(.top, 4)
+                    if draft.hasAnyCompletedSet {
+                        effortStrip
+                            .padding(.top, 2)
+                    }
                 }
             }
         }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.secondary.opacity(0.08))
-        )
-        .opacity(draft.skipped ? 0.5 : 1)
+        .opacity(draft.skipped ? 0.55 : 1)
         .sheet(isPresented: $showingExercisePicker) {
             ExercisePickerView(
                 profile: profile,
@@ -302,27 +422,73 @@ private struct ExerciseCard: View {
         }
     }
 
+    private var header: some View {
+        HStack(alignment: .top) {
+            Button {
+                showingExerciseHistory = true
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Text(draft.exercise?.name ?? "Exercise")
+                            .font(MMFont.headline)
+                            .foregroundStyle(MMColor.textPrimary)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(MMColor.textTertiary)
+                    }
+                    Text(draft.targetDescription)
+                        .font(MMFont.caption1)
+                        .foregroundStyle(MMColor.textSecondary)
+                }
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            Menu {
+                Button {
+                    showingExercisePicker = true
+                } label: {
+                    Label("Swap exercise", systemImage: "arrow.left.arrow.right")
+                }
+                Button(role: draft.skipped ? nil : .destructive) {
+                    draft.skipped.toggle()
+                } label: {
+                    Label(
+                        draft.skipped ? "Unskip" : "Skip exercise",
+                        systemImage: draft.skipped ? "arrow.uturn.backward" : "xmark"
+                    )
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.system(size: 20, weight: .regular))
+                    .foregroundStyle(MMColor.textTertiary)
+            }
+            .menuStyle(.borderlessButton)
+        }
+    }
+
     private var effortStrip: some View {
         HStack(spacing: 6) {
-            Text("Felt:")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text("Felt")
+                .font(MMFont.caption1)
+                .foregroundStyle(MMColor.textTertiary)
             ForEach([EffortLevel.easy, .moderate, .hard], id: \.self) { level in
                 Button {
                     draft.effort = (draft.effort == level) ? nil : level
                 } label: {
                     Text(level.displayName)
-                        .font(.caption).bold()
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .padding(.horizontal, 11)
+                        .padding(.vertical, 5)
                         .background(
                             Capsule().fill(
                                 draft.effort == level
-                                    ? Color.accentColor.opacity(0.2)
-                                    : Color.secondary.opacity(0.1)
+                                    ? MMColor.primaryMuted
+                                    : MMColor.surfaceInput
                             )
                         )
-                        .foregroundStyle(draft.effort == level ? Color.accentColor : .secondary)
+                        .foregroundStyle(draft.effort == level ? MMColor.primary : MMColor.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -345,9 +511,9 @@ private struct SetRow: View {
     var body: some View {
         HStack(spacing: 10) {
             Text("\(set.setNumber)")
-                .font(.caption).bold()
-                .foregroundStyle(.secondary)
-                .frame(width: 18, alignment: .leading)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(MMColor.textTertiary)
+                .frame(width: 20, alignment: .leading)
 
             countControls
 
@@ -362,17 +528,27 @@ private struct SetRow: View {
                     restTimer.start(seconds: restSeconds)
                 }
             } label: {
-                Image(systemName: set.completed ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundStyle(set.completed ? Color.accentColor : Color.secondary)
+                ZStack {
+                    Circle()
+                        .fill(set.completed ? MMColor.secondary : MMColor.surfaceInput)
+                    if set.completed {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(Color.white)
+                    } else {
+                        Circle()
+                            .strokeBorder(MMColor.border, lineWidth: 1.5)
+                    }
+                }
+                .frame(width: 38, height: 38)
             }
             .buttonStyle(.plain)
 
             if canRemove {
                 Button(action: onRemove) {
                     Image(systemName: "minus.circle.fill")
-                        .font(.footnote)
-                        .foregroundStyle(.tertiary)
+                        .font(.system(size: 16))
+                        .foregroundStyle(MMColor.textTertiary)
                 }
                 .buttonStyle(.plain)
             }
@@ -384,49 +560,52 @@ private struct SetRow: View {
         HStack(spacing: 6) {
             Button { decrementCount() } label: {
                 Image(systemName: "minus.circle")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 20))
+                    .foregroundStyle(MMColor.textSecondary)
             }
             .buttonStyle(.plain)
 
             Text(countValueText)
-                .font(.body).monospacedDigit()
-                .frame(minWidth: 28)
+                .font(MMFont.counter)
+                .foregroundStyle(MMColor.textPrimary)
+                .frame(minWidth: 30)
 
             Button { incrementCount() } label: {
                 Image(systemName: "plus.circle")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 20))
+                    .foregroundStyle(MMColor.textSecondary)
             }
             .buttonStyle(.plain)
 
             Text(countUnitText)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(MMFont.caption1)
+                .foregroundStyle(MMColor.textTertiary)
         }
     }
 
     private var weightField: some View {
         VStack(alignment: .trailing, spacing: 2) {
             HStack(spacing: 4) {
-                TextField("Weight", value: $set.weight, format: .number, prompt: Text("wt"))
+                TextField("wt", value: $set.weight, format: .number)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
-                    .frame(width: 46)
+                    .font(MMFont.counter)
+                    .foregroundStyle(MMColor.textPrimary)
+                    .frame(width: 52)
                     .padding(.horizontal, 6)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 5)
                     .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(Color.secondary.opacity(0.35), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(MMColor.surfaceInput)
                     )
                 Text(weightUnitShort)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(MMFont.caption1)
+                    .foregroundStyle(MMColor.textTertiary)
             }
             if let previous = set.previousWeight {
-                Text("last: \(formatWeight(previous))")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                Text("last \(formatWeight(previous))")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(MMColor.textTertiary)
             }
         }
     }
@@ -436,8 +615,6 @@ private struct SetRow: View {
             ? String(format: "%.0f", weight)
             : String(format: "%.1f", weight)
     }
-
-    // MARK: - Helpers
 
     private var countValueText: String {
         switch targetType {
@@ -461,59 +638,94 @@ private struct SetRow: View {
 
     private func incrementCount() {
         switch targetType {
-        case .reps:
-            set.reps = (set.reps ?? 0) + 1
-        case .seconds:
-            set.durationSeconds = (set.durationSeconds ?? 0) + 5
+        case .reps:    set.reps = (set.reps ?? 0) + 1
+        case .seconds: set.durationSeconds = (set.durationSeconds ?? 0) + 5
         }
     }
 
     private func decrementCount() {
         switch targetType {
-        case .reps:
-            set.reps = max(0, (set.reps ?? 0) - 1)
-        case .seconds:
-            set.durationSeconds = max(0, (set.durationSeconds ?? 0) - 5)
+        case .reps:    set.reps = max(0, (set.reps ?? 0) - 1)
+        case .seconds: set.durationSeconds = max(0, (set.durationSeconds ?? 0) - 5)
         }
     }
 }
 
-// MARK: - Rest timer pill
+// MARK: - Rest bar
 
-private struct RestTimerPill: View {
+private struct RestBar: View {
     @Bindable var timer: RestTimer
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "timer")
-            Text("Rest")
-                .font(.footnote).bold()
-            Text(formatted)
-                .font(.title3).bold().monospacedDigit()
-            Spacer(minLength: 4)
-            Button {
-                timer.stop()
-            } label: {
-                Text("Skip")
-                    .font(.footnote).bold()
+        HStack(spacing: 14) {
+            ProgressRing(
+                progress: progress,
+                size: 36, stroke: 3,
+                color: MMColor.primary,
+                trackColor: MMColor.primaryMuted
+            ) {
+                Image(systemName: "timer")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(MMColor.primary)
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Breathe, then go again")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(MMColor.textPrimary)
+                Text(formatted)
+                    .font(.system(size: 19, weight: .bold, design: .rounded))
+                    .foregroundStyle(MMColor.primary)
+                    .monospacedDigit()
+            }
+
+            Spacer()
+
+            HStack(spacing: 6) {
+                adjustButton(label: "-15") { timer.adjust(by: -15) }
+                adjustButton(label: "+15") { timer.adjust(by: 15) }
+                Button {
+                    timer.stop()
+                } label: {
+                    Text("Skip")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(MMColor.primary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(Capsule().fill(MMColor.primaryMuted))
+                }
+                .buttonStyle(.plain)
+            }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.vertical, 12)
         .background(
-            Capsule()
-                .fill(.regularMaterial)
-                .overlay(Capsule().stroke(Color.secondary.opacity(0.25)))
+            Capsule().fill(.regularMaterial)
+                .overlay(Capsule().strokeBorder(MMColor.separator, lineWidth: 1))
         )
-        .padding(.horizontal, 16)
-        .shadow(color: Color.black.opacity(0.1), radius: 8, y: 2)
+        .mmShadow(.lg)
+    }
+
+    private var progress: Double {
+        let total = max(1, timer.totalSeconds)
+        return 1.0 - Double(timer.remaining) / Double(total)
     }
 
     private var formatted: String {
         let minutes = timer.remaining / 60
         let seconds = timer.remaining % 60
         return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    private func adjustButton(label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(MMColor.textPrimary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(Capsule().fill(MMColor.surfaceInput))
+        }
+        .buttonStyle(.plain)
     }
 }

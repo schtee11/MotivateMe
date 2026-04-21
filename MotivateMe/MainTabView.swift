@@ -2,9 +2,9 @@
 //  MainTabView.swift
 //  MotivateMe
 //
-//  Top-level tab shell shown after onboarding: Today (landing),
-//  Progress (charts and PRs), History (past sessions), Settings.
-//  Each tab owns its own NavigationStack.
+//  Top-level tab shell shown after onboarding. Per the Morning Light
+//  design, the four tabs are Today / Journal / Progress / History.
+//  Settings is reached from the avatar pill on Today, not the tab bar.
 //
 
 import SwiftUI
@@ -16,23 +16,24 @@ struct MainTabView: View {
         TabView {
             TodayView(profile: profile)
                 .tabItem {
-                    Label("Today", systemImage: "figure.run")
+                    Label("Today", systemImage: "sun.max.fill")
+                }
+
+            JournalView()
+                .tabItem {
+                    Label("Journal", systemImage: "book.closed.fill")
                 }
 
             ProgressTabView(profile: profile)
                 .tabItem {
-                    Label("Progress", systemImage: "chart.line.uptrend.xyaxis")
+                    Label("Progress", systemImage: "chart.bar.fill")
                 }
 
             HistoryView()
                 .tabItem {
-                    Label("History", systemImage: "clock.arrow.circlepath")
-                }
-
-            SettingsView(profile: profile)
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape")
+                    Label("History", systemImage: "calendar")
                 }
         }
+        .tint(MMColor.primary)
     }
 }

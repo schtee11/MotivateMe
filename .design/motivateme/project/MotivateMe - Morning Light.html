@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MotivateMe — Morning Light Design System</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #E8E2DA; }
+  body {
+    font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+    color: #2a2420;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  @keyframes mmFade { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes mmSlideUp {
+    from { transform: translateY(100%); } to { transform: translateY(0); }
+  }
+  @keyframes mmPop {
+    0% { transform: scale(1); } 45% { transform: scale(1.08); } 100% { transform: scale(1); }
+  }
+  .mm-notif-stack { display: flex; flex-direction: column; gap: 8px; }
+  button:focus { outline: none; }
+  /* Dark-mode page background */
+  .mm-page-dark { background: #1d1713 !important; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="lib/tokens.jsx"></script>
+<script type="text/babel" src="lib/icons.jsx"></script>
+<script type="text/babel" src="lib/components.jsx"></script>
+<script type="text/babel" src="lib/primitives.jsx"></script>
+<script type="text/babel" src="lib/screens.jsx"></script>
+<script type="text/babel" src="lib/journal.jsx"></script>
+<script type="text/babel" src="lib/progress.jsx"></script>
+<script type="text/babel" src="lib/history.jsx"></script>
+<script type="text/babel" src="lib/logger.jsx"></script>
+<script type="text/babel" src="lib/onboarding.jsx"></script>
+<script type="text/babel" src="lib/settings.jsx"></script>
+<script type="text/babel" src="lib/habit-edit.jsx"></script>
+<script type="text/babel" src="lib/empty-states.jsx"></script>
+<script type="text/babel" src="lib/tokens-panel.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "dark": true,
+  "primaryHue": "peach",
+  "motion": "full",
+  "demoState": "dayOne"
+}/*EDITMODE-END*/;
+
+const INITIAL_HABITS = [
+  { id: 'h1', title: 'Upper body — Push', subtitle: '5 exercises · pre-filled from last week',
+    category: 'Strength', duration: '35 min', progress: 0.65, streak: 12, checked: false,
+    icon: 'dumbbell', lastDone: '3 days ago', weekDone: 2, weekTarget: 3, allTime: 47 },
+  { id: 'h2', title: 'Morning walk', subtitle: '20 minutes · any pace',
+    category: 'Movement', duration: '20 min', progress: 1, streak: 23, checked: true,
+    icon: 'figure', lastDone: 'yesterday', weekDone: 5, weekTarget: 7, allTime: 112 },
+  { id: 'h3', title: 'Stretch & breathe', subtitle: 'Hips, shoulders, 4 rounds',
+    category: 'Mobility', duration: '8 min', progress: 0.3, streak: 4, checked: false,
+    icon: 'leaf', lastDone: '2 days ago', weekDone: 3, weekTarget: 5, allTime: 28 },
+  { id: 'h4', title: 'Evening journal', subtitle: 'One line. One feeling.',
+    category: 'Reflect', duration: '3 min', progress: 0, streak: 8, checked: false,
+    icon: 'book', lastDone: 'yesterday', weekDone: 4, weekTarget: 7, allTime: 62 },
+];
+
+function reducer(state, action) {
+  switch (action.type) {
+    case 'goto':
+      return { ...state, screen: action.screen,
+        detailId: action.habitId || state.detailId,
+        journalEntryId: action.journalEntryId || state.journalEntryId };
+    case 'toggle': {
+      const habits = state.habits.map(h => h.id === action.id ? { ...h, checked: !h.checked } : h);
+      return { ...state, habits };
+    }
+    case 'addHabit':
+      return { ...state, habits: [...state.habits, action.habit], screen: 'home' };
+    case 'updateHabit':
+      return { ...state,
+        habits: state.habits.map(h => h.id === action.habit.id ? action.habit : h),
+        screen: 'habitDetail', detailId: action.habit.id };
+    case 'archiveHabit':
+      return { ...state,
+        habits: state.habits.map(h => h.id === action.id ? { ...h, archived: true } : h),
+        screen: 'home' };
+    case 'deleteHabit':
+      return { ...state,
+        habits: state.habits.filter(h => h.id !== action.id),
+        screen: 'home' };
+    case 'checkin':
+      return { ...state, mood: action.mood, readiness: action.readiness, journal: action.journal };
+    default: return state;
+  }
+}
+
+function App() {
+  // Tweaks state
+  const [hue, setHue] = React.useState(TWEAK_DEFAULTS.primaryHue);
+  const [dark, setDark] = React.useState(TWEAK_DEFAULTS.dark);
+  const [motion, setMotion] = React.useState(TWEAK_DEFAULTS.motion);
+  const [demoState, setDemoState] = React.useState(TWEAK_DEFAULTS.demoState || 'populated');
+  const [tweaksOpen, setTweaksOpen] = React.useState(false);
+  const [notifsOpen, setNotifsOpen] = React.useState(false);
+
+  const t = React.useMemo(() => MMTokens(hue, dark), [hue, dark]);
+
+  const [state, dispatch] = React.useReducer(reducer, {
+    screen: 'home',
+    detailId: 'h1',
+    habits: INITIAL_HABITS,
+    mood: null,
+    readiness: 7,
+    journal: '',
+    streak: 12,
+  });
+
+  // Edit mode bridge
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setTweaksOpen(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksOpen(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  React.useEffect(() => {
+    window.parent.postMessage({
+      type: '__edit_mode_set_keys',
+      edits: { dark, primaryHue: hue, motion, demoState },
+    }, '*');
+  }, [dark, hue, motion, demoState]);
+
+  // Persistent screen across reload
+  React.useEffect(() => {
+    const s = localStorage.getItem('mm.screen');
+    if (s) dispatch({ type: 'goto', screen: s });
+  }, []);
+  React.useEffect(() => { localStorage.setItem('mm.screen', state.screen); }, [state.screen]);
+
+  const tabItems = [
+    { key: 'home', icon: 'sun', label: 'Today' },
+    { key: 'journal', icon: 'book', label: 'Journal' },
+    { key: 'progress', icon: 'chart', label: 'Progress' },
+    { key: 'history', icon: 'clock', label: 'History' },
+  ];
+
+  return (
+    <div style={{
+      width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 24, position: 'relative',
+      background: dark ? '#1d1713' : '#E8E2DA',
+      transition: 'background 300ms ease',
+    }}>
+      <style>{`
+        ::selection { background: ${t.color.primaryMuted}; }
+      `}</style>
+
+      {/* Phone + notifications side-by-side on large screens */}
+      <div style={{ display: 'flex', gap: 24, alignItems: 'center', maxHeight: '100%' }}>
+        {/* Device */}
+        <div style={{ position: 'relative' }}>
+          <PhoneFrame dark={dark}>
+            <div style={{
+              height: '100%', display: 'flex', flexDirection: 'column',
+              background: t.color.bg,
+            }}>
+              <div style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
+                {state.screen === 'home' && <HomeScreen t={t} state={state} dispatch={dispatch} dayOne={demoState === 'dayOne'}/>}
+                {state.screen === 'habitDetail' && <DetailScreen t={t} state={state} dispatch={dispatch}/>}
+                {state.screen === 'progress' && <ProgressScreen t={t} onBack={() => dispatch({ type: 'goto', screen: 'home' })} dayOne={demoState === 'dayOne'}/>}
+                {state.screen === 'history' && <HistoryScreen t={t} onBack={() => dispatch({ type: 'goto', screen: 'home' })} dayOne={demoState === 'dayOne'}/>}
+                {state.screen === 'logger' && <LoggerScreen t={t} onExit={() => dispatch({ type: 'goto', screen: 'home' })}/>}
+                {state.screen === 'onboarding' && <OnboardingFlow t={t} onComplete={() => dispatch({ type: 'goto', screen: 'home' })}/>}
+                {state.screen === 'checkin' && <CheckinScreen t={t} state={state} dispatch={dispatch}/>}
+                {state.screen === 'journal' && (
+                  <JournalListScreen t={t}
+                    dayOne={demoState === 'dayOne'}
+                    onBack={() => dispatch({ type: 'goto', screen: 'home' })}
+                    onCompose={() => dispatch({ type: 'goto', screen: 'journalCompose' })}
+                    onOpen={(id) => dispatch({ type: 'goto', screen: 'journalRead', journalEntryId: id })}/>
+                )}
+                {state.screen === 'journalRead' && (
+                  <JournalReadScreen t={t} entryId={state.journalEntryId}
+                    onBack={() => dispatch({ type: 'goto', screen: 'journal' })}
+                    onEdit={() => dispatch({ type: 'goto', screen: 'journalCompose' })}/>
+                )}
+                {state.screen === 'journalCompose' && (
+                  <JournalComposeScreen t={t}
+                    onCancel={() => dispatch({ type: 'goto', screen: 'journal' })}
+                    onSave={() => dispatch({ type: 'goto', screen: 'journal' })}/>
+                )}
+                {(state.screen === 'settings') && (
+                  <SettingsScreen t={t} onBack={() => dispatch({ type: 'goto', screen: 'home' })}/>
+                )}
+                {(state.screen === 'habitNew' || state.screen === 'habitEdit') && (
+                  <HabitEditSheet t={t}
+                    mode={state.screen === 'habitEdit' ? 'edit' : 'new'}
+                    habit={state.screen === 'habitEdit' ? state.habits.find(h => h.id === state.detailId) : null}
+                    onCancel={() => dispatch({ type: 'goto', screen: state.screen === 'habitEdit' ? 'habitDetail' : 'home' })}
+                    onSave={(habit, mode) => dispatch({ type: mode === 'edit' ? 'updateHabit' : 'addHabit', habit })}
+                    onArchive={() => dispatch({ type: 'archiveHabit', id: state.detailId })}
+                    onDelete={() => dispatch({ type: 'deleteHabit', id: state.detailId })}/>
+                )}
+              </div>
+              {!['checkin','journalCompose','journalRead','habitDetail','logger','onboarding','habitNew','habitEdit'].includes(state.screen) && (
+                <div style={{ paddingBottom: 24 }}>
+                  <MMTabBar t={t} items={tabItems}
+                    active={tabItems.find(i => i.key === state.screen) ? state.screen : 'home'}
+                    onChange={k => dispatch({ type: 'goto', screen: k })}/>
+                </div>
+              )}
+            </div>
+
+            {tweaksOpen && (
+              <TokensPanel t={t} onClose={() => setTweaksOpen(false)}
+                hue={hue} setHue={setHue} dark={dark} setDark={setDark}
+                motion={motion} setMotion={setMotion}
+                demoState={demoState} setDemoState={setDemoState}/>
+            )}
+          </PhoneFrame>
+        </div>
+
+        {/* Notifications column */}
+        <NotificationsColumn t={t}/>
+      </div>
+
+      {/* Top-left label */}
+      <div style={{ position: 'absolute', top: 18, left: 22, display: 'flex', alignItems: 'baseline', gap: 10 }}>
+        <div style={{ width: 10, height: 10, borderRadius: 3, background: t.color.primary }}/>
+        <span style={{ fontFamily: t.family.rounded, fontWeight: 700, fontSize: 15,
+          color: dark ? '#f0e8df' : '#2a2420' }}>MotivateMe</span>
+        <span style={{ fontFamily: t.family.text, fontSize: 12, color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(42,36,32,0.5)' }}>
+          Morning Light · v1
+        </span>
+      </div>
+      <div style={{ position: 'absolute', top: 14, right: 22, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button onClick={() => dispatch({ type: 'goto', screen: 'onboarding' })}
+          style={{
+            padding: '6px 12px', borderRadius: 999, border: 'none', cursor: 'pointer',
+            background: dark ? 'rgba(255,255,255,0.08)' : 'rgba(42,36,32,0.06)',
+            color: dark ? 'rgba(255,255,255,0.75)' : 'rgba(42,36,32,0.7)',
+            fontFamily: 'SF Mono, ui-monospace, Menlo, monospace',
+            fontSize: 11, fontWeight: 500, letterSpacing: 0.2,
+          }}>
+          ▸ View onboarding
+        </button>
+        <span style={{ fontFamily: 'SF Mono, ui-monospace, Menlo, monospace',
+          fontSize: 11, color: dark ? 'rgba(255,255,255,0.45)' : 'rgba(42,36,32,0.5)' }}>
+          Toggle <b>Tweaks</b> (top bar) to open the token inspector
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// Phone body with subtle bezel
+function PhoneFrame({ children, dark }) {
+  return (
+    <div style={{
+      width: 390, height: 820, borderRadius: 54, padding: 8,
+      background: dark ? '#0b0907' : '#2a2420',
+      boxShadow: '0 30px 80px rgba(60, 40, 25, 0.22), 0 0 0 0.5px rgba(0,0,0,0.3)',
+      position: 'relative',
+    }}>
+      <div style={{
+        width: '100%', height: '100%', borderRadius: 46, overflow: 'hidden',
+        background: dark ? '#1d1713' : '#FCFAF7',
+        position: 'relative',
+      }}>
+        {/* dynamic island */}
+        <div style={{
+          position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)',
+          width: 118, height: 34, borderRadius: 22, background: '#000', zIndex: 60, pointerEvents: 'none'
+        }}/>
+        {children}
+        {/* home indicator */}
+        <div style={{
+          position: 'absolute', bottom: 7, left: 0, right: 0, zIndex: 70,
+          display: 'flex', justifyContent: 'center', pointerEvents: 'none',
+        }}>
+          <div style={{ width: 130, height: 4.5, borderRadius: 9999,
+            background: dark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.25)' }}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Placeholder screen for tabs we haven't designed
+function PlaceholderScreen({ t, name, onBack }) {
+  return (
+    <div style={{ padding: '54px 20px 100px', height: '100%',
+      display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
+      <div style={{ ...typeStyle(t.type.largeTitle, t.family), color: t.color.textPrimary, marginBottom: 20 }}>
+        {name === 'history' ? 'History' : 'Settings'}
+      </div>
+      <div style={{ padding: 40, borderRadius: 20, background: t.color.surfaceCard,
+        boxShadow: t.elev.sm, textAlign: 'center', flex: 1,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+        <div style={{ width: 64, height: 64, borderRadius: 20, background: t.color.primaryMuted,
+          display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name={name === 'history' ? 'calendar' : 'settings'} size={30} color={t.color.primary}/>
+        </div>
+        <div style={{ ...typeStyle(t.type.title3, t.family), color: t.color.textPrimary }}>
+          Out of scope for this doc
+        </div>
+        <div style={{ ...typeStyle(t.type.footnote, t.family), color: t.color.textSecondary,
+          maxWidth: 240, lineHeight: '18px' }}>
+          This system's three hero screens are <b>Today</b>, <b>Habit detail</b>, and <b>Daily check-in</b>.
+          Other tabs follow the same tokens.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Notifications column: banner + lock screen + live activity + dynamic island + haptics
+function NotificationsColumn({ t }) {
+  return (
+    <div style={{ width: 340, display: 'flex', flexDirection: 'column', gap: 14,
+      maxHeight: 800, overflowY: 'auto', padding: '8px 4px' }}>
+      <ColHeader t={t} title="Notifications"/>
+
+      <Card t={t} label="In-app banner">
+        <InAppBanner t={t}
+          title="Nice — streak 13 days"
+          body="Walk logged. See you tomorrow."
+          icon="flame"/>
+        <div style={{ height: 8 }}/>
+        <InAppBanner t={t}
+          title="Gentle reminder"
+          body="Evening journal waits when you're ready."
+          icon="book"/>
+      </Card>
+
+      <Card t={t} label="Lock screen">
+        <div style={{ padding: 18, borderRadius: 16,
+          background: 'linear-gradient(135deg, #2d2520, #4a3a2c)' }}>
+          <LockScreenNotif t={t}
+            title="Ready when you are"
+            body="Upper body · 35 min · pre-filled from last week"
+            time="8:02"/>
+          <div style={{ height: 10 }}/>
+          <LockScreenNotif t={t}
+            title="Morning, Jess"
+            body="One-minute check-in to shape today"
+            time="7:45"/>
+        </div>
+      </Card>
+
+      <Card t={t} label="Live Activity · Dynamic Island">
+        <LiveActivity t={t} variant="island" streak={13} minutesLeft={18}/>
+        <div style={{ height: 10 }}/>
+        <LiveActivity t={t} variant="banner" streak={13} minutesLeft={18}/>
+      </Card>
+
+      <Card t={t} label="Motion & haptics">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <HapticRow t={t} event="Habit completed" haptic=".success (light)" spring="smooth, 0.35s"/>
+          <HapticRow t={t} event="Streak extended" haptic=".success + soft bounce" spring="gentle, 0.55s"/>
+          <HapticRow t={t} event="Check-in saved" haptic=".soft" spring="smooth, 0.3s"/>
+          <HapticRow t={t} event="Missed day" haptic="none" spring="none — calm"/>
+          <HapticRow t={t} event="Long-press option" haptic=".selection" spring="n/a"/>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function ColHeader({ t, title }) {
+  return (
+    <div style={{ padding: '2px 6px 0', fontFamily: t.family.rounded, fontWeight: 700,
+      fontSize: 13, letterSpacing: 0.4, textTransform: 'uppercase',
+      color: t.color.textTertiary }}>{title}</div>
+  );
+}
+function Card({ t, label, children }) {
+  return (
+    <div style={{ padding: 12, borderRadius: 18, background: t.color.surfaceCard,
+      boxShadow: t.elev.sm }}>
+      <div style={{ ...typeStyle(t.type.caption2, t.family), textTransform: 'uppercase',
+        color: t.color.textTertiary, padding: '2px 4px 10px', letterSpacing: 0.5 }}>{label}</div>
+      {children}
+    </div>
+  );
+}
+function HapticRow({ t, event, haptic, spring }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr',
+      padding: '8px 10px', borderRadius: 10, background: t.color.surfaceInput, gap: 8,
+      alignItems: 'center' }}>
+      <span style={{ fontFamily: t.family.rounded, fontSize: 12, fontWeight: 600, color: t.color.textPrimary }}>{event}</span>
+      <span style={{ fontFamily: t.family.mono, fontSize: 10.5, color: t.color.primary }}>{haptic}</span>
+      <span style={{ fontFamily: t.family.mono, fontSize: 10.5, color: t.color.textSecondary }}>{spring}</span>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>

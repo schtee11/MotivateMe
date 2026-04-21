@@ -20,6 +20,7 @@ struct MotivateMeApp: App {
             SessionExercise.self,
             BodyMeasurement.self,
             DailyCheckin.self,
+            JournalEntry.self,
         ])
         let persistentConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -44,11 +45,13 @@ struct MotivateMeApp: App {
 
     init() {
         LibraryStore.shared.load()
+        MorningLightTheme.install()
     }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .tint(MMColor.primary)
         }
         .modelContainer(sharedModelContainer)
     }
