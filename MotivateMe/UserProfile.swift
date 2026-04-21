@@ -55,4 +55,21 @@ extension UserProfile {
         }
         return results.first
     }
+
+    /// Invariant: `weeklySchedule` must hold exactly one entry per `Weekday`.
+    /// Fills any missing weekday with a rest entry and returns true if the
+    /// schedule was modified (so callers can save the context).
+    @discardableResult
+    func normalizeWeeklySchedule() -> Bool {
+        let existing = Dictionary(uniqueKeysWithValues: weeklySchedule.map { ($0.weekday, $0) })
+        let canonical = Weekday.allCases.map { weekday in
+            existing[weekday] ?? ScheduleEntry(weekday: weekday, templateCategory: nil)
+        }
+        let changed = canonical.count != weeklySchedule.count
+            || zip(canonical, weeklySchedule).contains { $0 != $1 }
+        if changed {
+            weeklySchedule = canonical
+        }
+        return changed
+    }
 }

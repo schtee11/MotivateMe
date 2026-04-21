@@ -8,6 +8,11 @@
 //    • a Session exists for that calendar day (any status), or
 //    • the profile's weekly schedule marks that weekday as a rest day.
 //
+//  Relies on the UserProfile.weeklySchedule invariant (7 entries, one per
+//  weekday, enforced by UserProfile.normalizeWeeklySchedule()). A profile
+//  with no scheduled workout days at all has no goal to streak against, so
+//  we return 0 rather than rolling up rest days into an infinite streak.
+//
 //  Today counts only if already satisfied; otherwise the walk starts at
 //  yesterday so an active day in progress doesn't count as breaking the
 //  streak.
@@ -22,6 +27,9 @@ enum StreakCalculator {
         today: Date = Date(),
         calendar: Calendar = .current
     ) -> Int {
+        let hasAnyWorkoutDay = profile.weeklySchedule.contains { $0.templateCategory != nil }
+        guard hasAnyWorkoutDay else { return 0 }
+
         let sessionDays: Set<DateComponents> = Set(sessions.map {
             calendar.dateComponents([.year, .month, .day], from: $0.date)
         })
@@ -36,7 +44,11 @@ enum StreakCalculator {
             let hasSession = sessionDays.contains(components)
             let weekday = Weekday.from(date: cursor, calendar: calendar)
             let entry = profile.weeklySchedule.first { $0.weekday == weekday }
-            let isScheduledRest = entry?.templateCategory == nil
+            // Invariant: every weekday has an entry. A missing entry would
+            // mean the schedule was mutated outside normalizeWeeklySchedule;
+            // treat it as a workout day (streak-breaking) so the bug is
+            // visible rather than silently extending the streak.
+            let isScheduledRest = entry.map { $0.templateCategory == nil } ?? false
 
             if hasSession || isScheduledRest {
                 streak += 1

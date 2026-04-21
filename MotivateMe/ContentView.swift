@@ -29,14 +29,21 @@ struct ContentView: View {
     }
 
     // Profiles created before the schedule feature shipped have no schedule
-    // stored. Regenerate from splitStyle + daysPerWeek the first time we
-    // see such a profile. A no-op otherwise.
+    // stored; profiles from intermediate builds may hold a partial one.
+    // Generate from splitStyle + daysPerWeek when empty, then normalize so
+    // the 7-entry invariant holds before any consumer (streak, today) runs.
     private func ensureSchedule() {
-        guard let profile = profiles.first, profile.weeklySchedule.isEmpty else { return }
-        profile.weeklySchedule = ScheduleGenerator.defaultSchedule(
-            splitStyle: profile.splitStyle,
-            daysPerWeek: profile.daysPerWeek
-        )
+        guard let profile = profiles.first else { return }
+        var dirty = false
+        if profile.weeklySchedule.isEmpty {
+            profile.weeklySchedule = ScheduleGenerator.defaultSchedule(
+                splitStyle: profile.splitStyle,
+                daysPerWeek: profile.daysPerWeek
+            )
+            dirty = true
+        }
+        dirty = profile.normalizeWeeklySchedule() || dirty
+        guard dirty else { return }
         do {
             try modelContext.save()
         } catch {
