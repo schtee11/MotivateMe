@@ -16,6 +16,7 @@ import SwiftData
 
 struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(ErrorPresenter.self) private var errorPresenter
     @Bindable var profile: UserProfile
     @State private var activeWorkoutTemplate: WorkoutTemplate?
     @State private var showingPicker: Bool = false
@@ -502,6 +503,10 @@ struct TodayView: View {
         session.completedAt = Date()
         session.status = .restDayLogged
         modelContext.insert(session)
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            errorPresenter.present(error, context: "Logging your rest day")
+        }
     }
 }

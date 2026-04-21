@@ -13,6 +13,7 @@ import SwiftData
 struct SessionDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(ErrorPresenter.self) private var errorPresenter
     let session: Session
 
     @State private var showingDeleteConfirmation: Bool = false
@@ -187,8 +188,12 @@ struct SessionDetailView: View {
 
     private func deleteSession() {
         modelContext.delete(session)
-        try? modelContext.save()
-        dismiss()
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            errorPresenter.present(error, context: "Deleting this session")
+        }
     }
 }
 

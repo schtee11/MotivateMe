@@ -17,6 +17,7 @@ import SwiftData
 struct ActiveWorkoutView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(ErrorPresenter.self) private var errorPresenter
 
     @State private var draft: WorkoutDraft
     @State private var restTimer = RestTimer()
@@ -87,8 +88,12 @@ struct ActiveWorkoutView: View {
             }
             .sheet(isPresented: $showingFinishSheet) {
                 FinishWorkoutSheet { effort, notes in
-                    draft.save(to: modelContext, effort: effort, notes: notes)
-                    dismiss()
+                    do {
+                        try draft.save(to: modelContext, effort: effort, notes: notes)
+                        dismiss()
+                    } catch {
+                        errorPresenter.present(error, context: "Saving your workout")
+                    }
                 }
             }
         }

@@ -14,6 +14,7 @@ import SwiftData
 
 struct OnboardingView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(ErrorPresenter.self) private var errorPresenter
     @State private var draft = OnboardingDraft()
     @State private var stepIndex: Int = 0
 
@@ -97,10 +98,7 @@ struct OnboardingView: View {
         do {
             try modelContext.save()
         } catch {
-            // Persistence failure here is rare and the user has no good
-            // remedy; log and continue. ContentView's @Query won't update,
-            // so the user will see onboarding again on next launch.
-            print("OnboardingView: failed to save profile: \(error)")
+            errorPresenter.present(error, context: "Saving your profile")
         }
     }
 }
@@ -112,4 +110,5 @@ enum OnboardingStep: CaseIterable {
 #Preview {
     OnboardingView()
         .modelContainer(for: UserProfile.self, inMemory: true)
+        .environment(ErrorPresenter())
 }

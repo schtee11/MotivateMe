@@ -10,8 +10,11 @@
 //
 
 import Foundation
+import OSLog
 
 final class LibraryStore {
+    private static let log = Logger(subsystem: "com.williamtrout.MotivateMe", category: "library")
+
     static let shared = LibraryStore()
 
     private(set) var exercises: [UUID: Exercise] = [:]
@@ -36,14 +39,16 @@ final class LibraryStore {
 
     private func decodeArray<T: Decodable>(_ fileName: String, as: T.Type) -> [T] {
         guard let url = Bundle.main.url(forResource: fileName, withExtension: "json") else {
-            print("LibraryStore: \(fileName).json missing from bundle")
+            Self.log.critical("\(fileName, privacy: .public).json missing from bundle — shipping build is missing seed content")
+            assertionFailure("LibraryStore: \(fileName).json missing from bundle")
             return []
         }
         do {
             let data = try Data(contentsOf: url)
             return try JSONDecoder().decode([T].self, from: data)
         } catch {
-            print("LibraryStore: failed to decode \(fileName).json: \(error)")
+            Self.log.critical("failed to decode \(fileName, privacy: .public).json: \(error.localizedDescription, privacy: .public)")
+            assertionFailure("LibraryStore: failed to decode \(fileName).json: \(error)")
             return []
         }
     }

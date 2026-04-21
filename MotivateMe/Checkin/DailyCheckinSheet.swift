@@ -12,6 +12,7 @@ import SwiftData
 struct DailyCheckinSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(ErrorPresenter.self) private var errorPresenter
 
     @State private var readiness: Double = 7
     @State private var energy: String = ""
@@ -79,11 +80,15 @@ struct DailyCheckinSheet: View {
     }
 
     private func save() {
-        guard let checkin = try? DailyCheckin.upsert(for: Date(), in: modelContext) else { return }
-        checkin.readinessScore = Int(readiness)
-        checkin.readinessSource = .selfReport
-        let trimmed = energy.trimmingCharacters(in: .whitespacesAndNewlines)
-        checkin.selfReportedEnergy = trimmed.isEmpty ? nil : trimmed
-        try? modelContext.save()
+        do {
+            let checkin = try DailyCheckin.upsert(for: Date(), in: modelContext)
+            checkin.readinessScore = Int(readiness)
+            checkin.readinessSource = .selfReport
+            let trimmed = energy.trimmingCharacters(in: .whitespacesAndNewlines)
+            checkin.selfReportedEnergy = trimmed.isEmpty ? nil : trimmed
+            try modelContext.save()
+        } catch {
+            errorPresenter.present(error, context: "Saving your check-in")
+        }
     }
 }

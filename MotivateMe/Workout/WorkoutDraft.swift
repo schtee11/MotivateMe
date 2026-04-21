@@ -65,7 +65,7 @@ final class WorkoutDraft {
         return .partial
     }
 
-    func save(to context: ModelContext, effort: EffortLevel? = nil, notes: String? = nil) {
+    func save(to context: ModelContext, effort: EffortLevel? = nil, notes: String? = nil) throws {
         let session = Session()
         session.workoutTemplateId = template.id
         session.date = startedAt
@@ -108,11 +108,7 @@ final class WorkoutDraft {
             checkin.status = computedStatus
         }
 
-        do {
-            try context.save()
-        } catch {
-            print("WorkoutDraft: failed to save session: \(error)")
-        }
+        try context.save()
     }
 }
 
