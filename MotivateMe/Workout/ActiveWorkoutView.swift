@@ -27,8 +27,16 @@ struct ActiveWorkoutView: View {
     let profile: UserProfile
     let previousSession: Session?
 
-    init(template: WorkoutTemplate, profile: UserProfile, previousSession: Session? = nil) {
-        _draft = State(initialValue: WorkoutDraft(template: template, previousSession: previousSession))
+    init(
+        template: WorkoutTemplate,
+        profile: UserProfile,
+        previousSession: Session? = nil,
+        resumingFrom snapshot: WorkoutDraftSnapshot? = nil
+    ) {
+        let restored = snapshot.flatMap(WorkoutDraft.init(snapshot:))
+        _draft = State(
+            initialValue: restored ?? WorkoutDraft(template: template, previousSession: previousSession)
+        )
         self.profile = profile
         self.previousSession = previousSession
     }
@@ -69,7 +77,16 @@ struct ActiveWorkoutView: View {
             }
             .animation(.easeInOut(duration: 0.2), value: restTimer.isRunning)
             .onChange(of: scenePhase) { _, phase in
-                if phase == .active { restTimer.recompute() }
+                switch phase {
+                case .active:
+                    restTimer.recompute()
+                case .inactive, .background:
+                    // Leaving the app — snapshot so a kill or memory eviction
+                    // doesn't lose what the user has logged so far.
+                    WorkoutDraftStore.save(draft.snapshot)
+                @unknown default:
+                    break
+                }
             }
             .navigationTitle(draft.template.name)
             .navigationBarTitleDisplayMode(.inline)
@@ -85,7 +102,10 @@ struct ActiveWorkoutView: View {
                 isPresented: $showingDiscardConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("Discard", role: .destructive) { dismiss() }
+                Button("Discard", role: .destructive) {
+                    WorkoutDraftStore.clear()
+                    dismiss()
+                }
                 Button("Keep going", role: .cancel) {}
             } message: {
                 Text("Nothing will be saved.")
@@ -94,6 +114,7 @@ struct ActiveWorkoutView: View {
                 FinishWorkoutSheet { effort, notes in
                     do {
                         try draft.save(to: modelContext, effort: effort, notes: notes)
+                        WorkoutDraftStore.clear()
                         dismiss()
                     } catch {
                         errorPresenter.present(error, context: "Saving your workout")

@@ -19,6 +19,8 @@ struct TodayView: View {
     @Environment(ErrorPresenter.self) private var errorPresenter
     @Bindable var profile: UserProfile
     @State private var activeWorkoutTemplate: WorkoutTemplate?
+    @State private var resumeSnapshot: WorkoutDraftSnapshot?
+    @State private var showingResumePrompt: Bool = false
     @State private var showingPicker: Bool = false
     @State private var showingLighterPicker: Bool = false
     @State private var showingCheckin: Bool = false
@@ -90,8 +92,10 @@ struct TodayView: View {
                 ActiveWorkoutView(
                     template: template,
                     profile: profile,
-                    previousSession: lastSession(for: template)
+                    previousSession: lastSession(for: template),
+                    resumingFrom: resumeSnapshot?.templateId == template.id ? resumeSnapshot : nil
                 )
+                .onDisappear { resumeSnapshot = nil }
             }
             .sheet(isPresented: $showingPicker) {
                 WorkoutPickerView(profile: profile) { picked in
@@ -106,7 +110,32 @@ struct TodayView: View {
             .sheet(isPresented: $showingCheckin) {
                 DailyCheckinSheet()
             }
+            .alert("Resume workout?", isPresented: $showingResumePrompt, presenting: resumeSnapshot) { snapshot in
+                Button("Resume") {
+                    if let template = LibraryStore.shared.workoutTemplate(id: snapshot.templateId) {
+                        activeWorkoutTemplate = template
+                    } else {
+                        WorkoutDraftStore.clear()
+                        resumeSnapshot = nil
+                    }
+                }
+                Button("Discard", role: .destructive) {
+                    WorkoutDraftStore.clear()
+                    resumeSnapshot = nil
+                }
+            } message: { snapshot in
+                let name = LibraryStore.shared.workoutTemplate(id: snapshot.templateId)?.name ?? "your workout"
+                Text("You left \(name) in progress. Pick up where you left off?")
+            }
+            .task { checkForResumableWorkout() }
         }
+    }
+
+    private func checkForResumableWorkout() {
+        guard activeWorkoutTemplate == nil, resumeSnapshot == nil else { return }
+        guard let snapshot = WorkoutDraftStore.load() else { return }
+        resumeSnapshot = snapshot
+        showingResumePrompt = true
     }
 
     @ViewBuilder

@@ -18,17 +18,38 @@ import SwiftData
 @MainActor
 final class WorkoutDraft {
     let template: WorkoutTemplate
-    let startedAt: Date = Date()
+    let startedAt: Date
     var exerciseDrafts: [ExerciseDraft]
 
     init(template: WorkoutTemplate, previousSession: Session? = nil) {
         self.template = template
+        self.startedAt = Date()
         self.exerciseDrafts = template.exerciseSlots
             .sorted(by: { $0.order < $1.order })
             .map(ExerciseDraft.init)
         if let previousSession {
             applyPreviousWeights(from: previousSession)
         }
+    }
+
+    // Rehydrate from a persisted snapshot. Fails if the snapshot's template
+    // id no longer resolves (library change, corrupted data), so callers can
+    // fall back to "start fresh."
+    init?(snapshot: WorkoutDraftSnapshot) {
+        guard let template = LibraryStore.shared.workoutTemplate(id: snapshot.templateId) else {
+            return nil
+        }
+        self.template = template
+        self.startedAt = snapshot.startedAt
+        self.exerciseDrafts = snapshot.exerciseDrafts
+    }
+
+    var snapshot: WorkoutDraftSnapshot {
+        WorkoutDraftSnapshot(
+            templateId: template.id,
+            startedAt: startedAt,
+            exerciseDrafts: exerciseDrafts
+        )
     }
 
     // Seed weight fields from the user's last session of this template.
@@ -112,7 +133,7 @@ final class WorkoutDraft {
     }
 }
 
-struct ExerciseDraft: Identifiable {
+struct ExerciseDraft: Identifiable, Codable {
     var id: UUID = UUID()
     let slot: ExerciseSlot
     // Defaults to slot.fallbackExerciseId; overridden when the user swaps
@@ -156,7 +177,7 @@ struct ExerciseDraft: Identifiable {
     }
 }
 
-struct SetDraft: Identifiable {
+struct SetDraft: Identifiable, Codable {
     var id: UUID = UUID()
     var setNumber: Int
     var reps: Int?
