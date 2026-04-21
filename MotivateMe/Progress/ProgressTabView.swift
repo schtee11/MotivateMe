@@ -16,6 +16,7 @@ import Charts
 struct ProgressTabView: View {
     @Bindable var profile: UserProfile
     @Query(sort: \Session.date, order: .reverse) private var allSessions: [Session]
+    @Query(sort: \BodyMeasurement.date, order: .reverse) private var allMeasurements: [BodyMeasurement]
 
     var body: some View {
         NavigationStack {
@@ -27,6 +28,7 @@ struct ProgressTabView: View {
                         VStack(alignment: .leading, spacing: 20) {
                             headlineCard
                             weeklyChartCard
+                            measurementsCard
                             recentPRsCard
                         }
                         .padding()
@@ -34,11 +36,22 @@ struct ProgressTabView: View {
                 }
             }
             .navigationTitle("Progress")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        MeasurementsView(profile: profile)
+                    } label: {
+                        Image(systemName: "scalemass")
+                    }
+                }
+            }
         }
     }
 
     private var hasNoData: Bool {
-        allSessions.allSatisfy { $0.status == .restDayLogged || $0.status == .upcoming }
+        let noSessions = allSessions.allSatisfy { $0.status == .restDayLogged || $0.status == .upcoming }
+        let noMeasurements = !allMeasurements.contains { $0.type == "weight" }
+        return noSessions && noMeasurements
     }
 
     private var emptyState: some View {
@@ -147,6 +160,80 @@ struct ProgressTabView: View {
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.secondary.opacity(0.08))
         )
+    }
+
+    private var latestWeight: BodyMeasurement? {
+        allMeasurements.first { $0.type == "weight" }
+    }
+
+    private var weightDelta: (current: Double, previous: Double, unit: Unit)? {
+        let weights = allMeasurements.filter { $0.type == "weight" }
+        guard let current = weights.first, let previous = weights.dropFirst().first else { return nil }
+        return (current.value, previous.value, current.unit)
+    }
+
+    @ViewBuilder
+    private var measurementsCard: some View {
+        NavigationLink {
+            MeasurementsView(profile: profile)
+        } label: {
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: "scalemass")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Weight")
+                        .font(.subheadline).bold()
+                        .foregroundStyle(.primary)
+                    if let latest = latestWeight {
+                        Text(formatWeight(latest.value, unit: latest.unit)
+                             + " \u{00B7} " + latest.date.formatted(.dateTime.month(.abbreviated).day()))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Tap to log your first entry")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                if let delta = weightDelta {
+                    deltaBadge(current: delta.current, previous: delta.previous, unit: delta.unit)
+                }
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.secondary.opacity(0.08))
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func deltaBadge(current: Double, previous: Double, unit: Unit) -> some View {
+        let diff = current - previous
+        let sign = diff > 0 ? "+" : (diff < 0 ? "−" : "")
+        let magnitude = abs(diff)
+        let formatted = magnitude.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0f", magnitude)
+            : String(format: "%.1f", magnitude)
+        let suffix = unit == .pounds ? "lb" : "kg"
+        return Text("\(sign)\(formatted) \(suffix)")
+            .font(.caption).bold()
+            .monospacedDigit()
+            .foregroundStyle(.secondary)
+    }
+
+    private func formatWeight(_ value: Double, unit: Unit) -> String {
+        let number = value.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0f", value)
+            : String(format: "%.1f", value)
+        let suffix = unit == .pounds ? "lb" : "kg"
+        return "\(number) \(suffix)"
     }
 
     @ViewBuilder
