@@ -59,6 +59,7 @@ extension UserProfile {
     /// Invariant: `weeklySchedule` must hold exactly one entry per `Weekday`.
     /// Fills any missing weekday with a rest entry and returns true if the
     /// schedule was modified (so callers can save the context).
+    @MainActor
     @discardableResult
     func normalizeWeeklySchedule() -> Bool {
         let existing = Dictionary(uniqueKeysWithValues: weeklySchedule.map { ($0.weekday, $0) })
