@@ -24,6 +24,7 @@ struct TodayView: View {
     @State private var showingCheckin: Bool = false
 
     @AppStorage("mm.userName") private var userName: String = ""
+    @AppStorage("mm.forgivenessWindow") private var forgivenessWindow: Int = 3
 
     @Query(sort: \Session.date, order: .reverse) private var allSessions: [Session]
     @Query(sort: \DailyCheckin.date, order: .reverse) private var allCheckins: [DailyCheckin]
@@ -60,7 +61,11 @@ struct TodayView: View {
     private var todaysReadiness: Int? { todaysCheckin?.readinessScore }
 
     private var currentStreak: Int {
-        StreakCalculator.currentStreak(sessions: allSessions, profile: profile)
+        StreakCalculator.currentStreak(
+            sessions: allSessions,
+            profile: profile,
+            forgivenessWindow: forgivenessWindow
+        )
     }
 
     private var greeting: String {
@@ -88,7 +93,9 @@ struct TodayView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     header
-                    checkinBanner
+                    if profile.morningSelfReportEnabled {
+                        checkinBanner
+                    }
                     if currentStreak > 0 {
                         StreakHero(days: currentStreak, message: streakMessage(currentStreak))
                     }
@@ -124,15 +131,17 @@ struct TodayView: View {
                     }
                     .accessibilityLabel("Settings")
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingCheckin = true
-                    } label: {
-                        Image(systemName: "bell")
-                            .font(.system(size: 18, weight: .regular))
-                            .foregroundStyle(MMColor.textSecondary)
+                if profile.morningSelfReportEnabled {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            showingCheckin = true
+                        } label: {
+                            Image(systemName: "bell")
+                                .font(.system(size: 18, weight: .regular))
+                                .foregroundStyle(MMColor.textSecondary)
+                        }
+                        .accessibilityLabel("Check-in")
                     }
-                    .accessibilityLabel("Check-in")
                 }
             }
             .fullScreenCover(item: $activeWorkoutTemplate) { template in

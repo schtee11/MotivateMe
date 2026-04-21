@@ -4,8 +4,9 @@
 //
 //  Morning Light settings. Grouped-inset list with colored icon tiles,
 //  gentle micro-copy, a featured "gentle part" section with the ethos
-//  quote, and an affirmation footer. Some toggles are purely UI for now
-//  (backed by AppStorage) — their wiring will follow.
+//  quote, and an affirmation footer. Preferences are stored in AppStorage
+//  (keys prefixed `mm.`) and each toggle is wired to a concrete behavior
+//  elsewhere in the app — nothing here is cosmetic.
 //
 //  Changing split or daysPerWeek still offers the one-tap schedule
 //  regeneration alert.
@@ -13,7 +14,23 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 import UserNotifications
+
+struct ExportDocument: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+struct ExportShareSheet: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
+}
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -35,7 +52,9 @@ struct SettingsView: View {
     @AppStorage("mm.appearance") private var appearancePref: String = "auto"
     @AppStorage("mm.serifAccents") private var serifAccents: Bool = true
     @AppStorage("mm.reduceMotion") private var reduceMotion: Bool = false
-    @AppStorage("mm.iCloudBackup") private var iCloudBackup: Bool = false
+
+    @State private var exportDocument: ExportDocument?
+    @State private var showExportError: Bool = false
 
     var body: some View {
         ScrollView {
@@ -91,6 +110,14 @@ struct SettingsView: View {
             }
             .presentationDetents([.height(260)])
             .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $exportDocument) { doc in
+            ExportShareSheet(url: doc.url)
+        }
+        .alert("Couldn't export", isPresented: $showExportError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Something went wrong while preparing your export. Please try again.")
         }
     }
 
@@ -570,43 +597,24 @@ struct SettingsView: View {
     private var dataSection: some View {
         MMSettingsSection(
             title: "Your data",
-            footer: "This app stores everything on your device by default."
+            footer: "Everything stays on this device. Export shares a JSON copy you control."
         ) {
-            MMSettingsRow(
-                icon: "icloud.fill",
-                iconBackground: Color(.sRGB, red: 0.478, green: 0.647, blue: 0.722, opacity: 1)
-            ) {
-                MMSettingsLabel(
-                    title: "Back up to iCloud",
-                    subtitle: iCloudBackup ? "Synced to your Apple ID" : "Off — data stays on this phone"
-                )
-                Spacer(minLength: 8)
-                Toggle("", isOn: $iCloudBackup)
-                    .labelsHidden()
-                    .tint(Color(.sRGB, red: 0.204, green: 0.780, blue: 0.349, opacity: 1))
+            Button {
+                prepareExport()
+            } label: {
+                MMSettingsRow(
+                    icon: "square.and.arrow.up",
+                    iconBackground: Color(.sRGB, red: 0.545, green: 0.655, blue: 0.420, opacity: 1)
+                ) {
+                    MMSettingsLabel(title: "Export your data",
+                                    subtitle: "A JSON copy of your profile, sessions, and check-ins")
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(MMColor.textTertiary)
+                }
             }
-
-            MMSettingsRow(
-                icon: "square.and.arrow.up",
-                iconBackground: Color(.sRGB, red: 0.545, green: 0.655, blue: 0.420, opacity: 1)
-            ) {
-                MMSettingsLabel(title: "Export your data", subtitle: "As plain text or JSON")
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(MMColor.textTertiary)
-            }
-
-            MMSettingsRow(
-                icon: "square.and.arrow.down",
-                iconBackground: Color(.sRGB, red: 0.604, green: 0.580, blue: 0.533, opacity: 1)
-            ) {
-                MMSettingsLabel(title: "Import from another app")
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(MMColor.textTertiary)
-            }
+            .buttonStyle(.plain)
 
             Button {
                 showResetAlert = true
@@ -782,6 +790,16 @@ struct SettingsView: View {
         let encoded = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         guard let url = URL(string: "mailto:feedback@williamtrout.com?subject=\(encoded)") else { return }
         openURL(url)
+    }
+
+    private func prepareExport() {
+        do {
+            let url = try DataExport.makeExportFile(context: modelContext)
+            exportDocument = ExportDocument(url: url)
+        } catch {
+            errorPresenter.present(error, context: "Exporting your data")
+            showExportError = true
+        }
     }
 
     private func resetAllData() {

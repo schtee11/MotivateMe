@@ -20,6 +20,24 @@ extension View {
     }
 }
 
+/// Returns nil when the user has Reduce Motion enabled (either in our
+/// Settings, or via the system accessibility setting mirrored by SwiftUI).
+/// Pass into `.animation(_:value:)` and `withAnimation(_:)` to keep
+/// transitions honest.
+enum MMMotion {
+    static var spring: Animation? {
+        UserDefaults.standard.bool(forKey: "mm.reduceMotion")
+            ? nil
+            : .spring(response: 0.35, dampingFraction: 0.85)
+    }
+
+    static func spring(response: Double, damping: Double) -> Animation? {
+        UserDefaults.standard.bool(forKey: "mm.reduceMotion")
+            ? nil
+            : .spring(response: response, dampingFraction: damping)
+    }
+}
+
 enum MorningLightTheme {
     static func install() {
         let bg     = UIColor(MMColor.bg)

@@ -263,7 +263,7 @@ struct HistoryView: View {
                             isExpanded: expandedSessionId == session.persistentModelID,
                             onToggle: {
                                 let id = session.persistentModelID
-                                withAnimation(.spring(response: 0.32, dampingFraction: 0.85)) {
+                                withAnimation(MMMotion.spring(response: 0.32, damping: 0.85)) {
                                     expandedSessionId = expandedSessionId == id ? nil : id
                                 }
                             }
@@ -463,7 +463,7 @@ private struct HistoryRow: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(MMColor.textTertiary)
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                    .animation(.spring(response: 0.32, dampingFraction: 0.85), value: isExpanded)
+                    .animation(MMMotion.spring(response: 0.32, damping: 0.85), value: isExpanded)
             }
 
             if isExpanded {

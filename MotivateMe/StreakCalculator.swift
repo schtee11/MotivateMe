@@ -8,6 +8,11 @@
 //    • a Session exists for that calendar day (any status), or
 //    • the profile's weekly schedule marks that weekday as a rest day.
 //
+//  The forgiveness window lets the user miss up to N scheduled workout days
+//  without breaking the streak. Missed days are absorbed silently — they do
+//  not extend the streak but do not break it either. Once the budget is
+//  exhausted, the next miss breaks the walk.
+//
 //  Relies on the UserProfile.weeklySchedule invariant (7 entries, one per
 //  weekday, enforced by UserProfile.normalizeWeeklySchedule()). A profile
 //  with no scheduled workout days at all has no goal to streak against, so
@@ -24,6 +29,7 @@ enum StreakCalculator {
     static func currentStreak(
         sessions: [Session],
         profile: UserProfile,
+        forgivenessWindow: Int = 0,
         today: Date = Date(),
         calendar: Calendar = .current
     ) -> Int {
@@ -36,6 +42,7 @@ enum StreakCalculator {
 
         var cursor = calendar.startOfDay(for: today)
         var streak = 0
+        var forgivenessRemaining = max(0, forgivenessWindow)
         // Cap the walk at ~1 year; it's a safety net, not a real limit users hit.
         for _ in 0..<400 {
             let components = calendar.dateComponents([.year, .month, .day], from: cursor)
@@ -54,6 +61,8 @@ enum StreakCalculator {
                 streak += 1
             } else if isToday {
                 // Today hasn't failed yet — user still has time. Skip without breaking.
+            } else if forgivenessRemaining > 0 {
+                forgivenessRemaining -= 1
             } else {
                 break
             }

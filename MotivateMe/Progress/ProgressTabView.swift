@@ -20,6 +20,10 @@ struct ProgressTabView: View {
 
     @State private var range: ProgressStats.Range = .month
 
+    @AppStorage("mm.hideStreakNumbers") private var hideStreakNumbers: Bool = false
+    @AppStorage("mm.quietMode") private var quietMode: Bool = false
+    @AppStorage("mm.forgivenessWindow") private var forgivenessWindow: Int = 3
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -57,11 +61,11 @@ struct ProgressTabView: View {
                 header
                 rangePicker
                 headlineStats
-                trendCard
-                prCard
+                trendCard.opacity(quietMode ? 0.6 : 1.0)
+                prCard.opacity(quietMode ? 0.6 : 1.0)
                 weeklySummaryCard
                 bodyCard
-                heatmapCard
+                heatmapCard.opacity(quietMode ? 0.6 : 1.0)
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 32)
@@ -109,8 +113,8 @@ struct ProgressTabView: View {
         HStack(spacing: 10) {
             HeadlineStatTile(
                 icon: "flame.fill",
-                value: "\(currentStreak)",
-                unit: currentStreak == 1 ? "day" : "days",
+                value: hideStreakNumbers ? "—" : "\(currentStreak)",
+                unit: hideStreakNumbers ? "" : (currentStreak == 1 ? "day" : "days"),
                 label: "Current streak",
                 tone: .primary
             )
@@ -122,10 +126,15 @@ struct ProgressTabView: View {
                 tone: .secondary
             )
         }
+        .opacity(quietMode ? 0.55 : 1.0)
     }
 
     private var currentStreak: Int {
-        StreakCalculator.currentStreak(sessions: allSessions, profile: profile)
+        StreakCalculator.currentStreak(
+            sessions: allSessions,
+            profile: profile,
+            forgivenessWindow: forgivenessWindow
+        )
     }
 
     private var avgReadinessText: String {
@@ -334,29 +343,55 @@ struct ProgressTabView: View {
     // MARK: - Heatmap
 
     private var heatmapCard: some View {
-        MMCard(tone: .surface, radius: 22, padding: 18, shadow: .sm) {
+        let weeks = heatmapWeeks(for: range)
+        return MMCard(tone: .surface, radius: 22, padding: 18, shadow: .sm) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Readiness")
                     .font(MMFont.headline)
                     .foregroundStyle(MMColor.textPrimary)
-                Text("84 days of morning check-ins")
+                Text(heatmapSubtitle(weeks: weeks))
                     .font(MMFont.caption1)
                     .foregroundStyle(MMColor.textSecondary)
                     .padding(.bottom, 10)
-                MMHeatmap(values: readinessHeatmap)
+                MMHeatmap(values: readinessHeatmap(weeks: weeks), weeks: weeks)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
         }
     }
 
-    /// 12 weeks × 7 days, column-major. Maps each day to either the
-    /// readiness score (0…1) or — if no check-in — to whether a session
-    /// happened (gives the heatmap "shape" even if check-ins are sparse).
-    private var readinessHeatmap: [Double] {
+    private func heatmapWeeks(for range: ProgressStats.Range) -> Int {
+        switch range {
+        case .week:    return 1
+        case .month:   return 5
+        case .quarter: return 13
+        }
+    }
+
+    private func heatmapSubtitle(weeks: Int) -> String {
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
-        guard let earliest = cal.date(byAdding: .day, value: -7 * 12 + 1, to: today) else {
-            return Array(repeating: 0, count: 84)
+        guard let earliest = cal.date(byAdding: .day, value: -(weeks * 7) + 1, to: today) else {
+            return "\(weeks * 7) days"
+        }
+        let logged = allCheckins.filter { checkin in
+            guard checkin.readinessScore != nil else { return false }
+            return checkin.date >= earliest
+        }.count
+        if logged == 0 {
+            return "\(weeks * 7) days · no check-ins yet"
+        }
+        return "\(logged) check-in\(logged == 1 ? "" : "s") in the last \(weeks * 7) days"
+    }
+
+    /// `weeks` × 7 days, column-major. Maps each day to either the readiness
+    /// score (0…1) or — if no check-in — to whether a session happened (gives
+    /// the heatmap "shape" even if check-ins are sparse).
+    private func readinessHeatmap(weeks: Int) -> [Double] {
+        let total = weeks * 7
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        guard let earliest = cal.date(byAdding: .day, value: -total + 1, to: today) else {
+            return Array(repeating: 0, count: total)
         }
 
         var byDay: [Date: Double] = [:]
@@ -371,8 +406,8 @@ struct ProgressTabView: View {
         }
 
         var values: [Double] = []
-        values.reserveCapacity(84)
-        for col in 0..<12 {
+        values.reserveCapacity(total)
+        for col in 0..<weeks {
             for row in 0..<7 {
                 let dayOffset = col * 7 + row
                 if let day = cal.date(byAdding: .day, value: dayOffset, to: earliest) {

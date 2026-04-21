@@ -13,6 +13,8 @@ import OSLog
 struct MotivateMeApp: App {
     private static let storageLog = Logger(subsystem: "com.williamtrout.MotivateMe", category: "storage")
 
+    @AppStorage("mm.appearance") private var appearancePref: String = "auto"
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             UserProfile.self,
@@ -52,7 +54,16 @@ struct MotivateMeApp: App {
         WindowGroup {
             ContentView()
                 .tint(MMColor.primary)
+                .preferredColorScheme(preferredScheme)
         }
         .modelContainer(sharedModelContainer)
+    }
+
+    private var preferredScheme: ColorScheme? {
+        switch appearancePref {
+        case "light": return .light
+        case "dark":  return .dark
+        default:      return nil
+        }
     }
 }

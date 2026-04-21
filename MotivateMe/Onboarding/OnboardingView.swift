@@ -49,7 +49,7 @@ struct OnboardingView: View {
             Group {
                 if stepIndex > 0 && !isLastStep {
                     Button {
-                        withAnimation(.spring(response: 0.32, dampingFraction: 0.85)) {
+                        withAnimation(MMMotion.spring(response: 0.32, damping: 0.85)) {
                             stepIndex -= 1
                         }
                     } label: {
@@ -75,7 +75,7 @@ struct OnboardingView: View {
                     Capsule(style: .continuous)
                         .fill(dotColor(at: i))
                         .frame(width: i == stepIndex ? 20 : 6, height: 6)
-                        .animation(.spring(response: 0.32, dampingFraction: 0.85), value: stepIndex)
+                        .animation(MMMotion.spring(response: 0.32, damping: 0.85), value: stepIndex)
                 }
             }
 
@@ -153,7 +153,7 @@ struct OnboardingView: View {
         if isLastStep {
             save()
         } else {
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.85)) {
+            withAnimation(MMMotion.spring(response: 0.32, damping: 0.85)) {
                 stepIndex += 1
             }
         }

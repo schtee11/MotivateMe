@@ -89,7 +89,7 @@ struct ActiveWorkoutView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: restTimer.isRunning)
+            .animation(MMMotion.spring(response: 0.35, damping: 0.85), value: restTimer.isRunning)
             .onChange(of: scenePhase) { _, phase in
                 switch phase {
                 case .active:

@@ -136,7 +136,7 @@ struct ProgressRing<Content: View>: View {
                 .trim(from: 0, to: max(0, min(1, progress)))
                 .stroke(color, style: StrokeStyle(lineWidth: stroke, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(.spring(response: 0.6, dampingFraction: 0.78), value: progress)
+                .animation(MMMotion.spring(response: 0.6, damping: 0.78), value: progress)
             content()
         }
         .frame(width: size, height: size)
@@ -148,6 +148,9 @@ struct ProgressRing<Content: View>: View {
 struct StreakHero: View {
     var days: Int
     var message: String
+
+    @AppStorage("mm.hideStreakNumbers") private var hideStreakNumbers: Bool = false
+    @AppStorage("mm.quietMode") private var quietMode: Bool = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -165,14 +168,21 @@ struct StreakHero: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .lastTextBaseline, spacing: 10) {
-                    Text("\(days)")
-                        .font(MMFont.streakHero)
-                        .foregroundStyle(MMColor.primary)
-                        .monospacedDigit()
-                    Text(days == 1 ? "day" : "days")
-                        .font(MMFont.title3)
-                        .foregroundStyle(MMColor.textSecondary)
+                    if hideStreakNumbers {
+                        Image(systemName: "flame.fill")
+                            .font(MMFont.title1)
+                            .foregroundStyle(MMColor.primary)
+                    } else {
+                        Text("\(days)")
+                            .font(MMFont.streakHero)
+                            .foregroundStyle(MMColor.primary)
+                            .monospacedDigit()
+                        Text(days == 1 ? "day" : "days")
+                            .font(MMFont.title3)
+                            .foregroundStyle(MMColor.textSecondary)
+                    }
                 }
+                .opacity(quietMode ? 0.55 : 1.0)
                 Text(message)
                     .font(MMFont.headline)
                     .foregroundStyle(MMColor.textPrimary)
@@ -374,6 +384,14 @@ struct MMQuoteCard: View {
     var quote: String
     var attribution: String?
 
+    @AppStorage("mm.serifAccents") private var serifAccents: Bool = true
+
+    private var quoteFont: Font {
+        serifAccents
+            ? MMFont.quote
+            : .system(size: 16, weight: .medium)
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
@@ -382,7 +400,7 @@ struct MMQuoteCard: View {
                 .padding(.top, 2)
             VStack(alignment: .leading, spacing: 6) {
                 Text("\u{201C}\(quote)\u{201D}")
-                    .font(MMFont.quote)
+                    .font(quoteFont)
                     .foregroundStyle(MMColor.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                 if let attribution {
