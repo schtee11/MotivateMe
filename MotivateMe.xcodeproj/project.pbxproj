@@ -395,6 +395,8 @@
 				DEVELOPMENT_TEAM = BRLAF7XQYD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "MotivateMe reads your Health activity so it can suggest sessions that match your recent effort and recovery.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "MotivateMe saves workouts you log to Apple Health so they show up in Fitness alongside your other activity.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -431,6 +433,8 @@
 				DEVELOPMENT_TEAM = BRLAF7XQYD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "MotivateMe reads your Health activity so it can suggest sessions that match your recent effort and recovery.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "MotivateMe saves workouts you log to Apple Health so they show up in Fitness alongside your other activity.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
